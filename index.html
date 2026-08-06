@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIGHT & SHADOW — Two Souls. One Heist.</title>
+  <meta name="description" content="A top-down puzzle-stealth heist game where light and shadow are dynamic physical paths and walls.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header Navbar -->
+    <header class="top-bar">
+      <div class="brand">
+        <div class="logo-icon">✨</div>
+        <div class="brand-text">
+          <h1>LIGHT & SHADOW</h1>
+          <span class="subtitle">TWO SOULS. ONE HEIST.</span>
+        </div>
+      </div>
+
+      <div class="level-indicator">
+        <span class="label">LEVEL</span>
+        <span id="level-title" class="val">1: The Basics</span>
+      </div>
+
+      <div class="status-pills">
+        <div class="pill loot-pill" id="loot-status">
+          <span class="icon">💎</span>
+          <span class="text">LOOT: 0/1</span>
+        </div>
+        <div class="pill grace-pill" id="grace-status" style="display: none;">
+          <span class="icon">⚠️</span>
+          <span class="text">GRACE: 100%</span>
+        </div>
+      </div>
+
+      <div class="top-controls">
+        <button id="btn-sound" class="icon-btn" title="Toggle Sound">🔊</button>
+        <button id="btn-rewind" class="icon-btn" title="Rewind Step (Z)">↩️</button>
+        <button id="btn-restart" class="icon-btn" title="Restart Level (R)">🔄</button>
+        <button id="btn-levels" class="btn secondary">Levels</button>
+      </div>
+    </header>
+
+    <!-- Main Game Workspace -->
+    <main class="game-workspace">
+      <!-- Left Sidebar: Character & Controls -->
+      <aside class="sidebar-panel left-panel">
+        <div class="card character-card" id="card-light">
+          <div class="char-header">
+            <div class="char-avatar light-avatar">☀️</div>
+            <div class="char-info">
+              <h3>LIGHTWALKER</h3>
+              <span class="badge light-badge">LIGHT ONLY</span>
+            </div>
+          </div>
+          <p class="char-desc">Can only walk inside illuminated light paths. Shadow is an impassable void.</p>
+        </div>
+
+        <div class="card character-card" id="card-shadow">
+          <div class="char-header">
+            <div class="char-avatar shadow-avatar">🌙</div>
+            <div class="char-info">
+              <h3>SHADOWWEAVER</h3>
+              <span class="badge shadow-badge">DARK ONLY</span>
+            </div>
+          </div>
+          <p class="char-desc">Can only walk inside unlit dark areas. Light beams act as solid walls.</p>
+        </div>
+
+        <div class="card swap-card">
+          <button id="btn-swap-char" class="btn primary-accent full-width">
+            <span>SWAP CHARACTER</span>
+            <span class="hotkey-badge">TAB / SPACE</span>
+          </button>
+        </div>
+
+        <div class="card controls-card">
+          <h4>CONTROLS</h4>
+          <ul class="control-list">
+            <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Move Character</span></li>
+            <li><kbd>TAB</kbd> / <kbd>SPACE</kbd> <span>Swap Soul</span></li>
+            <li><kbd>E</kbd> <span>Interact / Rotate Mirror</span></li>
+            <li><kbd>Z</kbd> <span>Undo Step</span></li>
+            <li><kbd>R</kbd> <span>Reset Level</span></li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Center Play Area Canvas -->
+      <section class="canvas-container">
+        <div class="canvas-wrapper">
+          <canvas id="gameCanvas" width="900" height="650"></canvas>
+          <div id="game-overlay" class="overlay hidden">
+            <div class="overlay-card" id="overlay-content">
+              <h2 id="overlay-title">LEVEL COMPLETE</h2>
+              <p id="overlay-msg">Both souls have secured the loot and reached the exit portal!</p>
+              <div class="overlay-actions">
+                <button id="btn-next-level" class="btn primary">Next Level ➔</button>
+                <button id="btn-retry-level" class="btn secondary">Try Again</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Level Selector Modal -->
+    <div id="levels-modal" class="modal hidden">
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+          <h2>SELECT HEIST MISSION</h2>
+          <button id="btn-close-modal" class="close-btn">&times;</button>
+        </div>
+        <div class="level-grid">
+          <div class="level-card" data-level="0">
+            <span class="num">01</span>
+            <h4>THE BASICS</h4>
+            <p>Master moving Light in light beams and Shadow in darkness.</p>
+          </div>
+          <div class="level-card" data-level="1">
+            <span class="num">02</span>
+            <h4>TIMING & SPOTLIGHTS</h4>
+            <p>Navigate rotating spotlights and evade Lumen/Nyx Guard patrols.</p>
+          </div>
+          <div class="level-card" data-level="2">
+            <span class="num">03</span>
+            <h4>MIRRORS & SHADOW BRIDGES</h4>
+            <p>Rotate mirrors and push crates to craft custom walking paths.</p>
+          </div>
+          <div class="level-card" data-level="3">
+            <span class="num">04</span>
+            <h4>PRISM SPECTRUM HEIST</h4>
+            <p>Refract white light into RGB beams to trigger color gates!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

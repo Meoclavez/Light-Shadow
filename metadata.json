@@ -1,0 +1,8 @@
+{
+  "name": "Light & Shadow",
+  "description": "A top-down puzzle-stealth heist game where light and shadow are dynamic physical paths and walls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
