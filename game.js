@@ -1,6 +1,6 @@
 /**
  * LIGHT & SHADOW — Game Engine & Logic
- * 2D Raycasting, Optics Physics, Dual Characters & Guard AI
+ * 2D Raycasting, Optics Physics, Dual Characters, Wall Sliding & Guard AI
  */
 
 class AudioSynthesizer {
@@ -27,7 +27,7 @@ class AudioSynthesizer {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(587.33, this.ctx.currentTime); // D5
     osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.08); // A5
-    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -43,7 +43,7 @@ class AudioSynthesizer {
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(110, this.ctx.currentTime); // A2
     osc.frequency.exponentialRampToValueAtTime(65.41, this.ctx.currentTime + 0.1); // C2
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -59,7 +59,7 @@ class AudioSynthesizer {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(300, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -75,7 +75,7 @@ class AudioSynthesizer {
     osc.type = 'square';
     osc.frequency.setValueAtTime(440, this.ctx.currentTime);
     osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.05);
-    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -125,7 +125,7 @@ class AudioSynthesizer {
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(200, this.ctx.currentTime);
     osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -167,14 +167,19 @@ class LightShadowEngine {
     this.shadowChar = { x: 0, y: 0, radius: 14, speed: 4 };
 
     this.historyStack = [];
+    this.lastDistPushed = 0;
+
     this.graceTime = 0.5; // seconds
     this.currentGrace = 0.5;
 
-    this.lootSecured = false;
     this.gameState = 'PLAYING'; // 'PLAYING', 'WIN', 'FAIL'
 
-    this.lightPolygons = []; // Arrays of polygons [{pts: [{x,y}...], color: '#fff'}]
+    this.lightPolygons = [];
     this.coloredBeams = [];
+    this.particles = [];
+
+    this.stepSoundTimer = 0;
+    this.prismActiveLastFrame = false;
 
     this.keys = {};
 
@@ -222,7 +227,7 @@ class LightShadowEngine {
     });
 
     document.querySelectorAll('.level-card').forEach((card) => {
-      card.addEventListener('click', (e) => {
+      card.addEventListener('click', () => {
         const lvl = parseInt(card.getAttribute('data-level'));
         this.loadLevel(lvl);
         document.getElementById('levels-modal').classList.add('hidden');
@@ -249,6 +254,7 @@ class LightShadowEngine {
       // LEVEL 1: THE BASICS
       {
         title: '1: The Basics',
+        objective: 'Guide Lightwalker along light beams and Shadowweaver through darkness to steal the loot and reach the exit!',
         lightStart: { x: 100, y: 120 },
         shadowStart: { x: 100, y: 500 },
         walls: [
@@ -257,7 +263,7 @@ class LightShadowEngine {
           { x: 550, y: 150, w: 20, h: 350 },
         ],
         lightSources: [
-          { type: 'spotlight', x: 80, y: 80, angle: 0.35, fov: 0.65, range: 450, rotateSpeed: 0 }
+          { type: 'spotlight', x: 80, y: 80, angle: 0.35, fov: 0.65, range: 480, rotateSpeed: 0 }
         ],
         mirrors: [],
         prisms: [],
@@ -270,6 +276,7 @@ class LightShadowEngine {
       // LEVEL 2: TIMING & SPOTLIGHTS
       {
         title: '2: Timing & Guards',
+        objective: 'Watch out for rotating spotlights! Evade Lumen Guards in light and Nyx Guards in darkness.',
         lightStart: { x: 80, y: 100 },
         shadowStart: { x: 80, y: 550 },
         walls: [
@@ -294,6 +301,7 @@ class LightShadowEngine {
       // LEVEL 3: MIRRORS & CRATES
       {
         title: '3: Mirrors & Shadow Bridges',
+        objective: 'Step near the mirror and press [E] to rotate light! Push crates to block beams and create shadow paths.',
         lightStart: { x: 80, y: 100 },
         shadowStart: { x: 80, y: 520 },
         walls: [
@@ -321,6 +329,7 @@ class LightShadowEngine {
       // LEVEL 4: PRISM SPECTRUM HEIST
       {
         title: '4: Prism Spectrum Heist',
+        objective: 'Align light into the prism to split white light into Red and Blue spectrum beams to open color gates!',
         lightStart: { x: 80, y: 100 },
         shadowStart: { x: 80, y: 520 },
         walls: [
@@ -356,6 +365,7 @@ class LightShadowEngine {
     const lvl = this.levels[index];
     
     document.getElementById('level-title').textContent = lvl.title;
+    document.getElementById('mission-objective').textContent = lvl.objective;
 
     this.lightChar.x = lvl.lightStart.x;
     this.lightChar.y = lvl.lightStart.y;
@@ -374,8 +384,10 @@ class LightShadowEngine {
 
     this.activeCharacter = 'LIGHT';
     this.historyStack = [];
+    this.particles = [];
     this.currentGrace = this.graceTime;
     this.gameState = 'PLAYING';
+    this.pushStateHistory();
     
     this.updateUI();
   }
@@ -386,6 +398,7 @@ class LightShadowEngine {
   }
 
   swapCharacter() {
+    this.pushStateHistory();
     this.activeCharacter = this.activeCharacter === 'LIGHT' ? 'SHADOW' : 'LIGHT';
     this.audio.playSwap();
     this.updateUI();
@@ -408,7 +421,7 @@ class LightShadowEngine {
   }
 
   pushStateHistory() {
-    if (this.historyStack.length > 20) this.historyStack.shift();
+    if (this.historyStack.length > 25) this.historyStack.shift();
     this.historyStack.push({
       light: { ...this.lightChar },
       shadow: { ...this.shadowChar },
@@ -419,13 +432,14 @@ class LightShadowEngine {
   }
 
   rewindStep() {
-    if (this.historyStack.length > 0) {
-      const state = this.historyStack.pop();
-      this.lightChar = state.light;
-      this.shadowChar = state.shadow;
-      this.mirrors = state.mirrors;
-      this.crates = state.crates;
-      this.loot = state.loot;
+    if (this.historyStack.length > 1) {
+      this.historyStack.pop(); // Pop current
+      const state = this.historyStack[this.historyStack.length - 1];
+      this.lightChar = { ...state.light };
+      this.shadowChar = { ...state.shadow };
+      this.mirrors = JSON.parse(JSON.stringify(state.mirrors));
+      this.crates = JSON.parse(JSON.stringify(state.crates));
+      this.loot = { ...state.loot };
       this.audio.playInteract();
       this.updateUI();
     }
@@ -449,7 +463,7 @@ class LightShadowEngine {
   // GAME LOOP & LOGIC
   // -------------------------------------------------------------
   gameLoop(time) {
-    const dt = (time - this.lastTime) / 1000;
+    const dt = Math.min((time - this.lastTime) / 1000, 0.1);
     this.lastTime = time;
 
     if (this.gameState === 'PLAYING') {
@@ -471,21 +485,24 @@ class LightShadowEngine {
     // 2. Raycast & Calculate Light Polygons
     this.calculateLighting();
 
-    // 3. Move Active Character
+    // 3. Move Active Character (with smooth wall sliding)
     this.handleMovement(dt);
 
-    // 4. Update Guards AI
+    // 4. Update Particles
+    this.updateParticles(dt);
+
+    // 5. Update Guards AI
     this.updateGuards(dt);
 
-    // 5. Check Terrain Constraints (Light vs Shadow)
+    // 6. Check Terrain Constraints (Light vs Shadow)
     this.checkTerrainConstraints(dt);
 
-    // 6. Check Loot & Exit
+    // 7. Check Loot & Exit
     this.checkObjectives();
   }
 
   handleMovement(dt) {
-    const speed = 160 * dt;
+    const speed = 170 * dt;
     let dx = 0, dy = 0;
 
     if (this.keys['w'] || this.keys['arrowup']) dy -= 1;
@@ -502,20 +519,50 @@ class LightShadowEngine {
       const newX = currChar.x + dx * speed;
       const newY = currChar.y + dy * speed;
 
-      // Check wall collision
+      let moved = false;
+
+      // Try full movement first
       if (!this.checkWallCollision(newX, newY, currChar.radius)) {
-        this.pushStateHistory();
         currChar.x = newX;
         currChar.y = newY;
-
-        if (this.activeCharacter === 'LIGHT') {
-          this.audio.playLightStep();
-        } else {
-          this.audio.playShadowStep();
+        moved = true;
+      } else {
+        // Wall sliding: try X movement independently
+        if (!this.checkWallCollision(newX, currChar.y, currChar.radius)) {
+          currChar.x = newX;
+          moved = true;
+        }
+        // Wall sliding: try Y movement independently
+        if (!this.checkWallCollision(currChar.x, newY, currChar.radius)) {
+          currChar.y = newY;
+          moved = true;
         }
       }
 
-      // Check pushing crates
+      if (moved) {
+        // Push discrete history checkpoints every ~50px of movement
+        this.lastDistPushed += speed;
+        if (this.lastDistPushed > 50) {
+          this.pushStateHistory();
+          this.lastDistPushed = 0;
+        }
+
+        // Spawn particles
+        this.spawnTrailParticle(currChar.x, currChar.y, this.activeCharacter);
+
+        // Play audio footsteps at regular interval
+        this.stepSoundTimer += dt;
+        if (this.stepSoundTimer > 0.22) {
+          if (this.activeCharacter === 'LIGHT') {
+            this.audio.playLightStep();
+          } else {
+            this.audio.playShadowStep();
+          }
+          this.stepSoundTimer = 0;
+        }
+      }
+
+      // Push crates
       this.crates.forEach((c) => {
         if (Math.abs(currChar.x - (c.x + c.w / 2)) < c.w / 2 + 15 && Math.abs(currChar.y - (c.y + c.h / 2)) < c.h / 2 + 15) {
           c.x += dx * speed * 0.6;
@@ -547,11 +594,43 @@ class LightShadowEngine {
   }
 
   // -------------------------------------------------------------
+  // PARTICLES SYSTEM
+  // -------------------------------------------------------------
+  spawnTrailParticle(x, y, type) {
+    if (this.particles.length > 50) this.particles.shift();
+    this.particles.push({
+      x: x + (Math.random() - 0.5) * 8,
+      y: y + (Math.random() - 0.5) * 8,
+      vx: (Math.random() - 0.5) * 15,
+      vy: (Math.random() - 0.5) * 15,
+      radius: Math.random() * 3 + 2,
+      life: 0.4,
+      maxLife: 0.4,
+      color: type === 'LIGHT' ? '#ffb830' : '#9d4edd'
+    });
+  }
+
+  updateParticles(dt) {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.life -= dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      if (p.life <= 0) {
+        this.particles.splice(i, 1);
+      }
+    }
+  }
+
+  // -------------------------------------------------------------
   // RAYCASTING & LIGHTING CALCULATIONS
   // -------------------------------------------------------------
   calculateLighting() {
     this.lightPolygons = [];
     this.coloredBeams = [];
+
+    // Reset color gate state before re-evaluating live rays
+    this.gates.forEach((g) => g.open = false);
 
     // Collect all obstacle line segments
     const segments = [];
@@ -655,7 +734,6 @@ class LightShadowEngine {
     this.mirrors.forEach((m) => {
       const dist = Math.hypot(m.x - srcX, m.y - srcY);
       if (dist < 400) {
-        // Reflected Ray Angle
         const reflectAngle = 2 * m.angle - mainAngle;
         const poly = this.raycastCone(m.x, m.y, reflectAngle, 0.35, 450, segments);
         this.lightPolygons.push({ pts: poly, color: 'rgba(255, 240, 180, 0.85)' });
@@ -665,8 +743,10 @@ class LightShadowEngine {
           if (g.type === 'NYX') {
             const gDist = Math.hypot(g.x - m.x, g.y - m.y);
             if (gDist < 350) {
+              if (g.stunTimer <= 0) {
+                this.audio.playStun();
+              }
               g.stunTimer = 3.0; // Stun Nyx Guard
-              this.audio.playStun();
             }
           }
         });
@@ -674,10 +754,15 @@ class LightShadowEngine {
     });
 
     // Check Prism Refraction (Splits white light into RGB)
+    let prismActiveThisFrame = false;
     this.prisms.forEach((p) => {
       const dist = Math.hypot(p.x - srcX, p.y - srcY);
       if (dist < 450) {
-        this.audio.playPrism();
+        prismActiveThisFrame = true;
+        if (!this.prismActiveLastFrame) {
+          this.audio.playPrism();
+        }
+
         // Red, Green, Blue spectrum beams
         const redPoly = this.raycastCone(p.x, p.y, mainAngle - 0.2, 0.15, 400, segments);
         const greenPoly = this.raycastCone(p.x, p.y, mainAngle, 0.15, 400, segments);
@@ -689,15 +774,16 @@ class LightShadowEngine {
 
         // Check Color Gates activation
         this.gates.forEach((g) => {
-          if (g.reqColor === 'RED' && this.polyContainsPoint(redPoly, { x: g.x + 10, y: g.y + 100 })) {
+          if (g.reqColor === 'RED' && this.polyContainsPoint(redPoly, { x: g.x + 10, y: g.y + 50 })) {
             g.open = true;
           }
-          if (g.reqColor === 'BLUE' && this.polyContainsPoint(bluePoly, { x: g.x + 10, y: g.y + 100 })) {
+          if (g.reqColor === 'BLUE' && this.polyContainsPoint(bluePoly, { x: g.x + 10, y: g.y + 50 })) {
             g.open = true;
           }
         });
       }
     });
+    this.prismActiveLastFrame = prismActiveThisFrame;
   }
 
   // -------------------------------------------------------------
@@ -856,7 +942,18 @@ class LightShadowEngine {
       this.ctx.fill();
     });
 
-    // 4. Draw Walls & Gates
+    // 4. Draw Particles Trail
+    this.particles.forEach((p) => {
+      const alpha = Math.max(0, p.life / p.maxLife);
+      this.ctx.fillStyle = p.color;
+      this.ctx.globalAlpha = alpha;
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      this.ctx.fill();
+    });
+    this.ctx.globalAlpha = 1.0;
+
+    // 5. Draw Walls & Gates
     this.walls.forEach((w) => {
       this.ctx.fillStyle = '#1e2230';
       this.ctx.strokeStyle = '#343b52';
@@ -874,7 +971,7 @@ class LightShadowEngine {
       }
     });
 
-    // 5. Draw Crates
+    // 6. Draw Crates
     this.crates.forEach((c) => {
       this.ctx.fillStyle = '#6c584c';
       this.ctx.strokeStyle = '#adc178';
@@ -882,7 +979,7 @@ class LightShadowEngine {
       this.ctx.strokeRect(c.x, c.y, c.w, c.h);
     });
 
-    // 6. Draw Mirrors
+    // 7. Draw Mirrors
     this.mirrors.forEach((m) => {
       this.ctx.save();
       this.ctx.translate(m.x, m.y);
@@ -894,7 +991,7 @@ class LightShadowEngine {
       this.ctx.restore();
     });
 
-    // 7. Draw Prisms
+    // 8. Draw Prisms
     this.prisms.forEach((p) => {
       this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       this.ctx.beginPath();
@@ -907,7 +1004,7 @@ class LightShadowEngine {
       this.ctx.stroke();
     });
 
-    // 8. Draw Light Sources (Lamps/Spotlights)
+    // 9. Draw Light Sources (Lamps/Spotlights)
     this.lightSources.forEach((ls) => {
       this.ctx.fillStyle = '#ffb830';
       this.ctx.beginPath();
@@ -918,7 +1015,7 @@ class LightShadowEngine {
     });
     this.ctx.shadowBlur = 0;
 
-    // 9. Draw Guards
+    // 10. Draw Guards
     this.guards.forEach((g) => {
       // Draw Vision Cone
       this.ctx.fillStyle = g.type === 'LUMEN' ? 'rgba(255, 184, 48, 0.2)' : 'rgba(157, 78, 221, 0.2)';
@@ -941,7 +1038,7 @@ class LightShadowEngine {
       }
     });
 
-    // 10. Draw Loot
+    // 11. Draw Loot
     if (!this.loot.taken) {
       this.ctx.fillStyle = '#00f5d4';
       this.ctx.beginPath();
@@ -951,7 +1048,7 @@ class LightShadowEngine {
       this.ctx.fillText('💎 LOOT', this.loot.x - 22, this.loot.y - 15);
     }
 
-    // 11. Draw Exit Portal
+    // 12. Draw Exit Portal
     this.ctx.fillStyle = 'rgba(56, 176, 0, 0.4)';
     this.ctx.strokeStyle = '#38b000';
     this.ctx.lineWidth = 3;
@@ -963,7 +1060,7 @@ class LightShadowEngine {
     this.ctx.fillStyle = '#fff';
     this.ctx.fillText('EXIT', this.exit.x - 12, this.exit.y + 4);
 
-    // 12. Draw Characters
+    // 13. Draw Characters
     // Lightwalker (Golden Aura)
     this.ctx.shadowColor = '#ffb830';
     this.ctx.shadowBlur = this.activeCharacter === 'LIGHT' ? 20 : 5;
