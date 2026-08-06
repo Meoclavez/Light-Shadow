@@ -18,7 +18,6 @@
         <div class="logo-icon">✨</div>
         <div class="brand-text">
           <h1>LIGHT & SHADOW</h1>
-          <span class="subtitle">TWO SOULS. ONE HEIST.</span>
         </div>
       </div>
 
@@ -27,29 +26,41 @@
         <span id="level-title" class="val">1: The Basics</span>
       </div>
 
-      <div class="status-pills">
-        <div class="pill loot-pill" id="loot-status">
-          <span class="icon">💎</span>
-          <span class="text">LOOT: 0/1</span>
+      <div class="top-center-controls">
+        <div class="status-pills">
+          <div class="pill loot-pill" id="loot-status">
+            <span class="icon">💎</span>
+            <span class="text">0/1</span>
+          </div>
+          <div class="pill grace-pill" id="grace-status" style="display: none;">
+            <span class="icon">⚠️</span>
+            <span class="text">100%</span>
+          </div>
         </div>
-        <div class="pill grace-pill" id="grace-status" style="display: none;">
-          <span class="icon">⚠️</span>
-          <span class="text">GRACE: 100%</span>
-        </div>
+
+        <button id="btn-swap-char" class="btn primary-accent compact-swap" title="Swap Character (TAB)">
+          <span>SWAP ☀️/🌙</span>
+        </button>
       </div>
 
       <div class="top-controls">
         <button id="btn-sound" class="icon-btn" title="Toggle Sound">🔊</button>
         <button id="btn-rewind" class="icon-btn" title="Rewind Step (Z)">↩️</button>
         <button id="btn-restart" class="icon-btn" title="Restart Level (R)">🔄</button>
-        <button id="btn-levels" class="btn secondary">Levels</button>
+        <button id="btn-levels" class="btn secondary compact-btn">Levels</button>
+        <button id="btn-toggle-sidebar" class="icon-btn" title="Settings">⚙️</button>
       </div>
     </header>
 
     <!-- Main Game Workspace -->
     <main class="game-workspace">
       <!-- Left Sidebar: Character & Controls -->
-      <aside class="sidebar-panel left-panel">
+      <aside class="sidebar-panel left-panel hidden" id="settings-sidebar">
+        <div class="sidebar-header">
+          <h2>Game Settings</h2>
+          <button id="btn-close-sidebar" class="icon-btn">&times;</button>
+        </div>
+        
         <div class="card character-card" id="card-light">
           <div class="char-header">
             <div class="char-avatar light-avatar">☀️</div>
@@ -72,19 +83,12 @@
           <p class="char-desc">Can only walk inside unlit dark areas. Light beams act as solid walls.</p>
         </div>
 
-        <div class="card swap-card">
-          <button id="btn-swap-char" class="btn primary-accent full-width">
-            <span>SWAP CHARACTER</span>
-            <span class="hotkey-badge">TAB / SPACE</span>
-          </button>
-        </div>
-
         <div class="card controls-card">
           <h4>CONTROLS</h4>
           <ul class="control-list">
             <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Move Character</span></li>
             <li><kbd>TAB</kbd> / <kbd>SPACE</kbd> <span>Swap Soul</span></li>
-            <li><kbd>E</kbd> <span>Interact / Rotate Mirror</span></li>
+            <li><kbd>E</kbd> <span>Interact / Rotate</span></li>
             <li><kbd>Z</kbd> <span>Undo Step</span></li>
             <li><kbd>R</kbd> <span>Reset Level</span></li>
           </ul>

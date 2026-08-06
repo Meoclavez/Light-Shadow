@@ -109,6 +109,17 @@ body {
   color: var(--accent-cyan);
 }
 
+.top-center-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.compact-swap {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
 .status-pills {
   display: flex;
   gap: 12px;
@@ -224,6 +235,25 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: width 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+  overflow-y: auto;
+}
+
+.sidebar-panel.hidden {
+  display: none !important;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sidebar-header h2 {
+  font-size: 16px;
+  margin: 0;
+  color: var(--text-primary);
 }
 
 .card {
@@ -377,11 +407,16 @@ kbd {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  max-width: 900px;
+  aspect-ratio: 900 / 650;
 }
 
 canvas {
   display: block;
   background: #050608;
+  width: 100%;
+  height: 100%;
 }
 
 /* Overlay Card */
@@ -535,4 +570,53 @@ canvas {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+/* Responsive Scaling */
+@media (max-width: 1024px) {
+  .game-workspace {
+    flex-direction: column-reverse;
+    overflow-y: auto;
+    align-items: center;
+  }
+  
+  .sidebar-panel {
+    width: 100%;
+    max-width: 900px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .card {
+    flex: 1 1 300px;
+  }
+  
+  .canvas-container {
+    width: 100%;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .top-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .top-center-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .top-controls {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .level-grid {
+    grid-template-columns: 1fr;
+  }
 }

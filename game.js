@@ -213,6 +213,14 @@ class LightShadowEngine {
       e.target.textContent = this.audio.muted ? '🔇' : '🔊';
     });
 
+    document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+      document.getElementById('settings-sidebar').classList.toggle('hidden');
+    });
+
+    document.getElementById('btn-close-sidebar').addEventListener('click', () => {
+      document.getElementById('settings-sidebar').classList.add('hidden');
+    });
+
     document.getElementById('btn-levels').addEventListener('click', () => {
       document.getElementById('levels-modal').classList.remove('hidden');
     });
@@ -249,7 +257,7 @@ class LightShadowEngine {
       // LEVEL 1: THE BASICS
       {
         title: '1: The Basics',
-        lightStart: { x: 100, y: 120 },
+        lightStart: { x: 120, y: 95 },
         shadowStart: { x: 100, y: 500 },
         walls: [
           { x: 300, y: 0, w: 20, h: 250 },
@@ -270,7 +278,7 @@ class LightShadowEngine {
       // LEVEL 2: TIMING & SPOTLIGHTS
       {
         title: '2: Timing & Guards',
-        lightStart: { x: 80, y: 100 },
+        lightStart: { x: 120, y: 80 },
         shadowStart: { x: 80, y: 550 },
         walls: [
           { x: 220, y: 0, w: 20, h: 420 },
@@ -294,7 +302,7 @@ class LightShadowEngine {
       // LEVEL 3: MIRRORS & CRATES
       {
         title: '3: Mirrors & Shadow Bridges',
-        lightStart: { x: 80, y: 100 },
+        lightStart: { x: 120, y: 84 },
         shadowStart: { x: 80, y: 520 },
         walls: [
           { x: 250, y: 0, w: 20, h: 220 },
@@ -321,7 +329,7 @@ class LightShadowEngine {
       // LEVEL 4: PRISM SPECTRUM HEIST
       {
         title: '4: Prism Spectrum Heist',
-        lightStart: { x: 80, y: 100 },
+        lightStart: { x: 120, y: 90 },
         shadowStart: { x: 80, y: 520 },
         walls: [
           { x: 200, y: 0, w: 20, h: 450 },
@@ -707,7 +715,7 @@ class LightShadowEngine {
     const isLightInLight = this.isPointInAnyLight(this.lightChar);
     const isShadowInDark = !this.isPointInAnyLight(this.shadowChar);
 
-    const currValid = this.activeCharacter === 'LIGHT' ? isLightInLight : isShadowInDark;
+    const currValid = isLightInLight && isShadowInDark;
 
     const gracePill = document.getElementById('grace-status');
 
