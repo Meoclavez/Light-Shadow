@@ -49,4 +49,4 @@ This workspace contains the Game Design Document (GDD), Phase 2 Requirement Anal
 - Spawns must be on valid terrain (Light lit, Shadow dark) — the idle-start test enforces this (the Oct 2026 start-up crash was Lightwalker spawning outside its spotlight cone).
 
 ## Status (October 1, 2026)
-- Start-up crash fixed, all 4 levels redesigned and verified winnable, campaign end/targets/unlocks/save implemented, docs updated. Not yet committed.
+- Start-up crash fixed, all 4 levels redesigned and verified winnable, campaign end/targets/unlocks/save implemented, docs updated. Merged into main (695cc10, fast-forward from branch `fix/game-start-and-end-logic`) and pushed to origin.
