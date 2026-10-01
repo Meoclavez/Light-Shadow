@@ -11,10 +11,16 @@ erDiagram
     LEVEL ||--|{ GUARD : contains
     LEVEL ||--|| LOOT : contains
     LEVEL ||--|| EXIT : contains
+    GATE ||--|| RECEPTOR : "unlocked by"
+    SAVE_DATA ||--o{ LEVEL_SCORE : records
+    LEVEL ||--o| LEVEL_SCORE : "scored in"
 
     LEVEL {
         int level_id PK
         string title
+        string desc
+        float parTime
+        string objective
         point lightStart
         point shadowStart
     }
@@ -28,6 +34,8 @@ erDiagram
         float fov
         float range
         float rotateSpeed
+        float sweepAmplitude
+        float sweepSpeed
     }
 
     WALL {
@@ -44,6 +52,7 @@ erDiagram
         float y
         float angle
         float radius
+        float spread
     }
 
     PRISM {
@@ -51,6 +60,7 @@ erDiagram
         float x
         float y
         float angle
+        float size "solid 30x30 glass block"
     }
 
     GATE {
@@ -61,7 +71,12 @@ erDiagram
         float h
         string color
         string reqColor
-        boolean open
+        boolean open "latched once lit"
+    }
+
+    RECEPTOR {
+        float x
+        float y
     }
 
     CRATE {
@@ -92,5 +107,20 @@ erDiagram
     EXIT {
         float x
         float y
+        float radius "45 px twilight zone"
+    }
+
+    SAVE_DATA {
+        string storageKey PK "LIGHT_SHADOW_SAVEDATA"
+        int unlockedLevelIndex
+        boolean muted
+        float volume
+    }
+
+    LEVEL_SCORE {
+        string levelKey PK "level_N"
+        boolean completed
+        float bestTimeSeconds
+        int stars "1 to 3"
     }
 ```

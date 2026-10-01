@@ -31,9 +31,22 @@ This workspace contains the Game Design Document (GDD), Phase 2 Requirement Anal
 - [index.html](file:///home/meoclavezz/Projects/P-Game/index.html): Glassmorphic game user interface, top navbar, HUD, active character cards, mission objective banner, and HTML5 canvas viewport.
 - [style.css](file:///home/meoclavezz/Projects/P-Game/style.css): Custom dark noir design system, HSL color tokens, glowing light/shadow card animations, mission banner styling, and glass overlay.
 - [game.js](file:///home/meoclavezz/Projects/P-Game/game.js): Complete game engine implementation featuring:
-  - `AudioSynthesizer`: Web Audio API sound generator (chimes, bass steps, mirror clicks, prism chimes, alarms, victory fanfares).
-  - `LightShadowEngine`: Main loop controller, 2D Visibility Polygon raycaster, mirror angle reflection, prism spectrum splitting into Red/Green/Blue rays.
-  - Dual Character Controller: Lightwalker (light-only terrain) & Shadowweaver (dark-only terrain) with smooth wall sliding, 0.5s grace period, and instant step rewind (`Z` key).
-  - Guard AI: Lumen Guards (patrol light), Nyx Guards (patrol dark, stunned for 3s when hit by light beams).
-  - Particle Engine: Golden light & violet shadow particle trails on movement.
-  - Level System: 4 handcrafted levels with interactive mission objectives.
+  - `LEVELS` constant: static level data (walls, light sources incl. `sweep` pendulums, mirrors with `spread`, solid prisms, gates with colour `receptor`, crates, guards, loot, exit, `parTime`, `desc`).
+  - `SaveManager`: localStorage persistence under `LIGHT_SHADOW_SAVEDATA` (`unlockedLevelIndex`, `highScores.level_N {completed, bestTimeSeconds, stars}`, `audioSettings`).
+  - `AudioSynthesizer`: Web Audio API sound generator routed through a master gain node (chimes, bass steps, mirror clicks, prism chimes, alarms, victory fanfares).
+  - `LightShadowEngine`: main loop, 2D visibility-polygon raycaster, honest optics (mirrors/prisms react only when actually lit; prisms emit R/G/B 40 px laser bands; receptors latch gates open), guard line-of-sight vision, solid pushable crates.
+  - Dual Character Controller: Lightwalker (light-only) & Shadowweaver (dark-only), per-soul 0.5 s grace meter, step rewind (`Z`). Exit portal is neutral "twilight" ground.
+  - End logic: win = loot + both souls in exit; target time + 1–3 stars (★★★ = under target with no rewinds); next level unlocks on win; final level shows the "HEIST COMPLETE!" campaign screen (state `CAMPAIGN_COMPLETE`).
+  - Debug handle: `window.lightShadowGame`.
+- [tests/playthrough.test.js](file:///home/meoclavezz/Projects/P-Game/tests/playthrough.test.js): dependency-free headless regression suite (Node `vm` sandbox + stubbed DOM; a bot plays every level with simulated key presses).
+
+## How to Run & Verify
+- Play: open `index.html`, or `python3 -m http.server 8000` → http://localhost:8000
+- Test: `node tests/playthrough.test.js` (must print `8/8 tests passed`). Run it after any change to `LEVELS` or engine rules — the reference bot solutions in the test encode each level's intended route, so geometry changes must keep them valid.
+
+## Conventions
+- Level geometry is designed against the real raycaster: canvas 900×650, character radius 14, speed 170 px/s, grace 0.5 s (≈85 px of forbidden terrain), exit radius 45, guard vision 160 px / ±0.4 rad.
+- Spawns must be on valid terrain (Light lit, Shadow dark) — the idle-start test enforces this (the Oct 2026 start-up crash was Lightwalker spawning outside its spotlight cone).
+
+## Status (October 1, 2026)
+- Start-up crash fixed, all 4 levels redesigned and verified winnable, campaign end/targets/unlocks/save implemented, docs updated. Not yet committed.

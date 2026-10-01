@@ -9,6 +9,7 @@ graph TD
         FR1_1["FR-1.1: Lightwalker Constraints (Light only)"]
         FR1_2["FR-1.2: Shadowweaver Constraints (Dark only)"]
         FR1_3["FR-1.3: Character Swapping (Tab/Space)"]
+        FR1_4["FR-1.4: Per-Soul Grace Period & Rewind System"]
         
         FR2["FR-2: Optics & Physics Engine"]
         FR2_1["FR-2.1: 2D Light Raycasting & Spotlights"]
@@ -19,12 +20,16 @@ graph TD
         FR3["FR-3: Stealth & Guard AI"]
         FR3_1["FR-3.1: Lumen Guards (Patrol Light)"]
         FR3_2["FR-3.2: Nyx Guards (Patrol Dark, Stunned by Light)"]
-        FR3_3["FR-3.3: Vision Cone Collision Checking"]
+        FR3_3["FR-3.3: Vision Cone Collision Checking (Line of Sight)"]
         
         FR4["FR-4: Level Objectives"]
         FR4_1["FR-4.1: Loot Artifact Collection"]
         FR4_2["FR-4.2: Coordinated Exit Reach"]
-        FR4_3["FR-4.3: Grace Period & Rewind System"]
+        FR4_3["FR-4.3: Level Select, Restart & Unlocking"]
+        FR4_4["FR-4.4: Sealed Exit until Loot & Twilight Portal"]
+        FR4_5["FR-4.5: Target Time & Star Rating (max 12 stars)"]
+        FR4_6["FR-4.6: Campaign Completion Screen"]
+        FR4_7["FR-4.7: Local Progress Persistence (localStorage)"]
     end
     
     subgraph Non-Functional Requirements
@@ -46,6 +51,7 @@ graph TD
     FR1 --> FR1_1
     FR1 --> FR1_2
     FR1 --> FR1_3
+    FR1 --> FR1_4
     
     FR2 --> FR2_1
     FR2 --> FR2_2
@@ -59,4 +65,8 @@ graph TD
     FR4 --> FR4_1
     FR4 --> FR4_2
     FR4 --> FR4_3
+    FR4 --> FR4_4
+    FR4 --> FR4_5
+    FR4 --> FR4_6
+    FR4 --> FR4_7
 ```

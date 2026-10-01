@@ -32,6 +32,10 @@
           <span class="icon">💎</span>
           <span class="text">LOOT: 0/1</span>
         </div>
+        <div class="pill timer-pill" id="timer-status" title="Elapsed time / target time">
+          <span class="icon">⏱️</span>
+          <span class="text">0:00.0 / 0:30.0</span>
+        </div>
         <div class="pill grace-pill" id="grace-status" style="display: none;">
           <span class="icon">⚠️</span>
           <span class="text">GRACE: 100%</span>
@@ -93,6 +97,8 @@
             <li><kbd>E</kbd> <span>Interact / Rotate Mirror</span></li>
             <li><kbd>Z</kbd> <span>Undo Step</span></li>
             <li><kbd>R</kbd> <span>Reset Level</span></li>
+            <li><kbd>ENTER</kbd> <span>Next Level (after a win)</span></li>
+            <li><kbd>ESC</kbd> <span>Close Level Select</span></li>
           </ul>
         </div>
       </aside>
@@ -105,9 +111,11 @@
             <div class="overlay-card" id="overlay-content">
               <h2 id="overlay-title">LEVEL COMPLETE</h2>
               <p id="overlay-msg">Both souls have secured the loot and reached the exit portal!</p>
+              <div id="overlay-stats" class="overlay-stats"></div>
               <div class="overlay-actions">
                 <button id="btn-next-level" class="btn primary">Next Level ➔</button>
                 <button id="btn-retry-level" class="btn secondary">Try Again</button>
+                <button id="btn-overlay-levels" class="btn secondary">Levels</button>
               </div>
             </div>
           </div>
@@ -122,27 +130,11 @@
           <h2>SELECT HEIST MISSION</h2>
           <button id="btn-close-modal" class="close-btn">&times;</button>
         </div>
-        <div class="level-grid">
-          <div class="level-card" data-level="0">
-            <span class="num">01</span>
-            <h4>THE BASICS</h4>
-            <p>Master moving Light in light beams and Shadow in darkness.</p>
-          </div>
-          <div class="level-card" data-level="1">
-            <span class="num">02</span>
-            <h4>TIMING & SPOTLIGHTS</h4>
-            <p>Navigate rotating spotlights and evade Lumen/Nyx Guard patrols.</p>
-          </div>
-          <div class="level-card" data-level="2">
-            <span class="num">03</span>
-            <h4>MIRRORS & SHADOW BRIDGES</h4>
-            <p>Rotate mirrors and push crates to craft custom walking paths.</p>
-          </div>
-          <div class="level-card" data-level="3">
-            <span class="num">04</span>
-            <h4>PRISM SPECTRUM HEIST</h4>
-            <p>Refract white light into RGB beams to trigger color gates!</p>
-          </div>
+        <div class="level-grid" id="level-grid"></div>
+        <div class="modal-footer">
+          <span id="total-stars" class="total-stars">★ 0 / 12</span>
+          <span class="modal-hint">Beat a mission's target time without rewinding for ★★★. Clear a mission to unlock the next.</span>
+          <button id="btn-reset-progress" class="btn secondary">Reset Progress</button>
         </div>
       </div>
     </div>

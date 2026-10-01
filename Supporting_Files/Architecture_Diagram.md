@@ -7,13 +7,15 @@ graph TD
     subgraph User Interface Layer
         HUD["Glassmorphic HUD (index.html / style.css)"]
         CharCards["Character HUD Cards (Lightwalker & Shadowweaver)"]
-        LevelModal["Level Selector Modal"]
-        Overlay["Victory / Defeat Overlay Modal"]
+        LevelModal["Level Selector Modal (Locks, Stars, Best Times, Reset Progress)"]
+        Overlay["Victory / Defeat / Campaign Complete Overlay (Stats & Stars)"]
+        TimerPill["HUD Timer Pill (Elapsed / Target) & Objective Banner"]
     end
 
     subgraph Input & Controllers
-        InputMgr["Input & Event Manager (WASD, Tab, Space, E, Z, R)"]
+        InputMgr["Input & Event Manager (WASD, Tab, Space, E, Z, R, Enter, Esc)"]
         GameLoop["Game Loop Controller (requestAnimationFrame)"]
+        Progression["Progression / Campaign Controller (PLAYING, WIN, FAIL, CAMPAIGN_COMPLETE)"]
     end
 
     subgraph Core Physics & Optics Engine
@@ -21,12 +23,18 @@ graph TD
         Mirrors["Rotatable Mirror Reflection Solver"]
         Prisms["Prism RGB Spectrum Refraction Solver"]
         Crates["Dynamic Shadow-Casting Crates Solver"]
+        Receptors["Colour Receptor & Gate Latch"]
     end
 
     subgraph Entity & AI Subsystem
         CharController["Dual Character Controller (Light & Shadow)"]
-        GraceSystem["Grace Period & Rewind State Manager"]
-        GuardAI["Guard AI Engine (Lumen & Nyx Guards)"]
+        GraceSystem["Per-Soul Grace Meters & Rewind State Manager"]
+        GuardAI["Guard AI Engine (Lumen & Nyx Guards, Line of Sight)"]
+    end
+
+    subgraph Persistence Layer
+        SaveMgr["SaveManager"]
+        Storage[("Browser localStorage: LIGHT_SHADOW_SAVEDATA")]
     end
 
     subgraph Audio Engine
@@ -41,6 +49,8 @@ graph TD
     Raycaster --> Mirrors
     Raycaster --> Prisms
     Raycaster --> Crates
+    Prisms --> Receptors
+    Raycaster --> GuardAI
     
     GameLoop --> CharController
     CharController --> GraceSystem
@@ -48,4 +58,13 @@ graph TD
     
     GameLoop --> AudioSynth
     GameLoop --> HUD
+    HUD --> CharCards
+    HUD --> TimerPill
+
+    GameLoop --> Progression
+    Progression --> Overlay
+    Progression --> LevelModal
+    Progression --> SaveMgr
+    LevelModal --> SaveMgr
+    SaveMgr --> Storage
 ```

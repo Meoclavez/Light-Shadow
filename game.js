@@ -6,22 +6,35 @@
 class AudioSynthesizer {
   constructor() {
     this.ctx = null;
+    this.master = null;
     this.muted = false;
+    this.volume = 0.8;
   }
 
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, v));
+    if (this.master) this.master.gain.value = this.volume;
+  }
+
+  // Returns true when a sound may be played (not muted, Web Audio available)
   init() {
+    if (this.muted) return false;
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return false;
       this.ctx = new AudioCtx();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.volume;
+      this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+    return true;
   }
 
   playLightStep() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
@@ -30,14 +43,13 @@ class AudioSynthesizer {
     gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.master);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.08);
   }
 
   playShadowStep() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'triangle';
@@ -46,14 +58,13 @@ class AudioSynthesizer {
     gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.master);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.1);
   }
 
   playSwap() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
@@ -62,14 +73,13 @@ class AudioSynthesizer {
     gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.master);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.15);
   }
 
   playInteract() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'square';
@@ -78,14 +88,13 @@ class AudioSynthesizer {
     gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.master);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.12);
   }
 
   playPrism() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const now = this.ctx.currentTime;
     [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
       const osc = this.ctx.createOscillator();
@@ -94,15 +103,14 @@ class AudioSynthesizer {
       gain.gain.setValueAtTime(0.08, now + idx * 0.04);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.2);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.master);
       osc.start(now + idx * 0.04);
       osc.stop(now + idx * 0.04 + 0.2);
     });
   }
 
   playLoot() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const now = this.ctx.currentTime;
     [587.33, 739.99, 880, 1174.66].forEach((freq, idx) => {
       const osc = this.ctx.createOscillator();
@@ -111,15 +119,14 @@ class AudioSynthesizer {
       gain.gain.setValueAtTime(0.12, now + idx * 0.06);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.master);
       osc.start(now + idx * 0.06);
       osc.stop(now + idx * 0.06 + 0.25);
     });
   }
 
   playStun() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sawtooth';
@@ -128,14 +135,13 @@ class AudioSynthesizer {
     gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.master);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.3);
   }
 
   playWin() {
-    if (this.muted) return;
-    this.init();
+    if (!this.init()) return;
     const now = this.ctx.currentTime;
     [440, 554.37, 659.25, 880].forEach((freq, idx) => {
       const osc = this.ctx.createOscillator();
@@ -144,10 +150,207 @@ class AudioSynthesizer {
       gain.gain.setValueAtTime(0.15, now + idx * 0.1);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.master);
       osc.start(now + idx * 0.1);
       osc.stop(now + idx * 0.1 + 0.4);
     });
+  }
+}
+
+// -------------------------------------------------------------
+// GAME CONSTANTS & LEVEL DATA
+// -------------------------------------------------------------
+const SAVE_KEY = 'LIGHT_SHADOW_SAVEDATA';
+const EXIT_RADIUS = 45;      // Both souls must stand inside this radius to escape
+const LOOT_RADIUS = 30;      // Pickup distance for the loot
+const MOVE_SPEED = 170;      // px per second
+const PUSH_SPEED_FACTOR = 0.6;
+
+// Static level data (see 07_Database_Design_Document.md §3 for the schema).
+// Light sources: 'spotlight' (cone) or 'lamp' (360°). Optional `rotateSpeed` (rad/s)
+// spins a source; optional `sweep: { amplitude, speed }` swings it like a pendulum.
+// Mirrors reflect a cone of `spread` radians (default 0.25); prisms split white light into
+// R/G/B laser bands. Gates open (and stay open) once a band of `reqColor` covers their `receptor`.
+const LEVELS = [
+  // LEVEL 1: THE BASICS
+  {
+    title: '1: The Basics',
+    desc: 'Master moving Light in light beams and Shadow in darkness.',
+    objective: 'Lightwalker must stay inside the light, Shadowweaver inside the dark. Steal the loot, then bring BOTH souls to the exit portal.',
+    parTime: 25,
+    lightStart: { x: 110, y: 150 },
+    shadowStart: { x: 80, y: 540 },
+    walls: [
+      { x: 0, y: 300, w: 640, h: 20 },
+      { x: 320, y: 440, w: 20, h: 210 },
+    ],
+    lightSources: [
+      { type: 'spotlight', x: 40, y: 150, angle: 0, fov: 0.7, range: 950 }
+    ],
+    mirrors: [],
+    prisms: [],
+    gates: [],
+    crates: [],
+    guards: [],
+    loot: { x: 560, y: 160 },
+    exit: { x: 800, y: 330 }
+  },
+  // LEVEL 2: TIMING & GUARDS
+  {
+    title: '2: Timing & Guards',
+    desc: 'Time a swinging spotlight and slip past Lumen & Nyx Guard patrols.',
+    objective: 'Cross the Lumen Guard\'s post while it faces away, and time Shadowweaver\'s dash under the swinging spotlight. Nyx Guards see in the dark!',
+    parTime: 45,
+    lightStart: { x: 100, y: 110 },
+    shadowStart: { x: 80, y: 560 },
+    walls: [
+      { x: 0, y: 220, w: 700, h: 20 },
+      { x: 300, y: 240, w: 20, h: 290 },
+      { x: 600, y: 240, w: 20, h: 290 },
+    ],
+    lightSources: [
+      { type: 'spotlight', x: 40, y: 110, angle: 0, fov: 0.3, range: 950 },
+      { type: 'spotlight', x: 460, y: 252, angle: Math.PI / 2, fov: 0.5, range: 450, sweep: { amplitude: 1.0, speed: 0.7 } }
+    ],
+    mirrors: [],
+    prisms: [],
+    gates: [],
+    crates: [],
+    guards: [
+      { type: 'LUMEN', x: 380, y: 40, patrol: [{ x: 380, y: 40 }, { x: 380, y: 190 }], speed: 1.2 },
+      { type: 'NYX', x: 760, y: 340, patrol: [{ x: 760, y: 340 }, { x: 760, y: 620 }], speed: 1.3 }
+    ],
+    loot: { x: 600, y: 110 },
+    exit: { x: 810, y: 270 }
+  },
+  // LEVEL 3: MIRRORS & SHADOW BRIDGES
+  {
+    title: '3: Mirrors & Shadow Bridges',
+    desc: 'Rotate mirrors and push crates to craft custom walking paths.',
+    objective: 'Press [E] beside the mirror to bend the beam down the shaft. Then push the crate into the beam to cast a shadow bridge for Shadowweaver.',
+    parTime: 45,
+    lightStart: { x: 100, y: 100 },
+    shadowStart: { x: 80, y: 560 },
+    walls: [
+      { x: 0, y: 200, w: 620, h: 20 },
+      { x: 760, y: 200, w: 140, h: 20 },
+      { x: 760, y: 220, w: 20, h: 310 },
+    ],
+    lightSources: [
+      { type: 'spotlight', x: 40, y: 100, angle: 0, fov: 0.25, range: 950 }
+    ],
+    mirrors: [
+      { x: 700, y: 100, angle: 0, radius: 18 }
+    ],
+    prisms: [],
+    gates: [],
+    crates: [
+      { x: 460, y: 380, w: 100, h: 50 }
+    ],
+    guards: [
+      { type: 'NYX', x: 380, y: 250, patrol: [{ x: 380, y: 250 }, { x: 380, y: 630 }], speed: 1.2 }
+    ],
+    loot: { x: 700, y: 300 },
+    exit: { x: 830, y: 590 }
+  },
+  // LEVEL 4: PRISM SPECTRUM HEIST
+  {
+    title: '4: Prism Spectrum Heist',
+    desc: 'Refract white light into RGB beams to trigger color gates!',
+    objective: 'Tilt the mirror once with [E] so white light strikes the prism. Red light unlocks the vault door, Blue light frees Shadowweaver and freezes the Nyx Guard.',
+    parTime: 60,
+    lightStart: { x: 100, y: 80 },
+    shadowStart: { x: 100, y: 540 },
+    walls: [
+      { x: 600, y: 0, w: 20, h: 260 },
+      { x: 600, y: 360, w: 20, h: 290 },
+      { x: 0, y: 420, w: 260, h: 20 },
+      { x: 240, y: 440, w: 20, h: 80 },
+    ],
+    lightSources: [
+      { type: 'spotlight', x: 40, y: 80, angle: 0, fov: 0.2, range: 950 }
+    ],
+    mirrors: [
+      { x: 220, y: 80, angle: 0, radius: 18, spread: 0.1 }
+    ],
+    prisms: [
+      { x: 370, y: 230 }
+    ],
+    gates: [
+      { id: 'gate-red', x: 600, y: 260, w: 20, h: 100, color: '#ff0055', reqColor: 'RED', receptor: { x: 582, y: 304 } },
+      { id: 'gate-blue', x: 240, y: 520, w: 20, h: 130, color: '#3a86ff', reqColor: 'BLUE', receptor: { x: 487, y: 560 } }
+    ],
+    crates: [],
+    guards: [
+      { type: 'LUMEN', x: 720, y: 150, patrol: [{ x: 720, y: 150 }, { x: 720, y: 600 }], speed: 1.2 },
+      { type: 'NYX', x: 450, y: 620, patrol: [{ x: 450, y: 620 }, { x: 450, y: 450 }], speed: 1.0 }
+    ],
+    loot: { x: 800, y: 600 },
+    exit: { x: 850, y: 425 }
+  }
+];
+
+const BEAM_COLORS = {
+  RED: 'rgba(255, 0, 85, 0.75)',
+  GREEN: 'rgba(56, 176, 0, 0.75)',
+  BLUE: 'rgba(58, 134, 255, 0.75)'
+};
+
+const PRISM_HALF = 15; // prisms are solid 30x30 glass blocks
+const SPECTRUM_BAND_WIDTH = 40; // prism beams are parallel laser bands, wide enough to walk on
+
+function prismRect(p) {
+  return { x: p.x - PRISM_HALF, y: p.y - PRISM_HALF, w: PRISM_HALF * 2, h: PRISM_HALF * 2 };
+}
+
+function deepCopy(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function normalizeAngle(a) {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return a;
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds - m * 60;
+  return `${m}:${s < 10 ? '0' : ''}${s.toFixed(1)}`;
+}
+
+// -------------------------------------------------------------
+// SAVE DATA (localStorage, key LIGHT_SHADOW_SAVEDATA)
+// -------------------------------------------------------------
+class SaveManager {
+  static defaults() {
+    return { unlockedLevelIndex: 0, highScores: {}, audioSettings: { muted: false, volume: 0.8 } };
+  }
+
+  static load() {
+    const data = SaveManager.defaults();
+    try {
+      const raw = window.localStorage.getItem(SAVE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Number.isInteger(parsed.unlockedLevelIndex)) {
+          data.unlockedLevelIndex = Math.max(0, Math.min(parsed.unlockedLevelIndex, LEVELS.length - 1));
+        }
+        if (parsed.highScores && typeof parsed.highScores === 'object') data.highScores = parsed.highScores;
+        if (parsed.audioSettings) Object.assign(data.audioSettings, parsed.audioSettings);
+      }
+    } catch (e) {
+      // Corrupt or blocked storage: fall back to a fresh profile
+    }
+    return data;
+  }
+
+  static save(data) {
+    try {
+      window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch (e) {
+      // Storage unavailable (private mode / file quota): progress lasts for this session only
+    }
   }
 }
 
@@ -160,48 +363,86 @@ class LightShadowEngine {
     this.ctx = this.canvas.getContext('2d');
     this.audio = new AudioSynthesizer();
 
+    this.saveData = SaveManager.load();
+    this.audio.muted = !!this.saveData.audioSettings.muted;
+    this.audio.setVolume(this.saveData.audioSettings.volume ?? 0.8);
+
     this.currentLevelIndex = 0;
     this.activeCharacter = 'LIGHT'; // 'LIGHT' or 'SHADOW'
-    
-    this.lightChar = { x: 0, y: 0, radius: 14, speed: 4 };
-    this.shadowChar = { x: 0, y: 0, radius: 14, speed: 4 };
+
+    this.lightChar = { x: 0, y: 0, radius: 14 };
+    this.shadowChar = { x: 0, y: 0, radius: 14 };
 
     this.historyStack = [];
     this.lastDistPushed = 0;
 
+    // Each soul has its own grace meter: it drains while the controlled soul stands on
+    // forbidden terrain and refills only once that soul is back on valid terrain.
     this.graceTime = 0.5; // seconds
-    this.currentGrace = 0.5;
+    this.grace = { LIGHT: 0.5, SHADOW: 0.5 };
 
-    this.gameState = 'PLAYING'; // 'PLAYING', 'WIN', 'FAIL'
+    this.gameState = 'PLAYING'; // 'PLAYING', 'WIN', 'FAIL', 'CAMPAIGN_COMPLETE'
+    this.levelTime = 0;
+    this.rewindsUsed = 0;
 
     this.lightPolygons = [];
     this.coloredBeams = [];
     this.particles = [];
+    this.segments = [];
 
     this.stepSoundTimer = 0;
     this.prismActiveLastFrame = false;
+    this.shownTimerText = '';
 
     this.keys = {};
 
     this.initEvents();
-    this.loadLevel(0);
+    this.updateSoundButton();
+    this.loadLevel(this.firstUnfinishedLevel());
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this.gameLoop(t));
   }
 
+  get levels() {
+    return LEVELS;
+  }
+
+  firstUnfinishedLevel() {
+    for (let i = 0; i <= this.saveData.unlockedLevelIndex; i++) {
+      if (!this.levelRecord(i).completed) return i;
+    }
+    return 0;
+  }
+
+  levelRecord(index) {
+    return this.saveData.highScores[`level_${index}`] || { completed: false };
+  }
+
+  isLevelUnlocked(index) {
+    return index <= this.saveData.unlockedLevelIndex;
+  }
+
   initEvents() {
     window.addEventListener('keydown', (e) => {
-      this.keys[e.key.toLowerCase()] = true;
+      const key = e.key.toLowerCase();
+      if (key === 'escape') {
+        this.closeLevelSelect();
+        return;
+      }
+      if (this.isModalOpen()) return;
 
-      if (e.key === 'Tab' || e.key === ' ') {
-        e.preventDefault();
-        this.swapCharacter();
-      } else if (e.key.toLowerCase() === 'e') {
-        this.interact();
-      } else if (e.key.toLowerCase() === 'z') {
-        this.rewindStep();
-      } else if (e.key.toLowerCase() === 'r') {
+      if (e.key === 'Tab' || e.key === ' ') e.preventDefault();
+      this.keys[key] = true;
+      if (e.repeat) return;
+
+      if (key === 'r') {
         this.restartLevel();
+      } else if (key === 'enter' && this.gameState === 'WIN') {
+        this.nextLevel();
+      } else if (this.gameState === 'PLAYING') {
+        if (e.key === 'Tab' || e.key === ' ') this.swapCharacter();
+        else if (key === 'e') this.interact();
+        else if (key === 'z') this.rewindStep();
       }
     });
 
@@ -209,192 +450,160 @@ class LightShadowEngine {
       this.keys[e.key.toLowerCase()] = false;
     });
 
-    document.getElementById('btn-swap-char').addEventListener('click', () => this.swapCharacter());
-    document.getElementById('btn-rewind').addEventListener('click', () => this.rewindStep());
+    // Releasing keys while the window is unfocused would otherwise leave them stuck "down"
+    window.addEventListener('blur', () => {
+      this.keys = {};
+    });
+
+    document.getElementById('btn-swap-char').addEventListener('click', () => {
+      if (this.gameState === 'PLAYING') this.swapCharacter();
+    });
+    document.getElementById('btn-rewind').addEventListener('click', () => {
+      if (this.gameState === 'PLAYING') this.rewindStep();
+    });
     document.getElementById('btn-restart').addEventListener('click', () => this.restartLevel());
-    
-    document.getElementById('btn-sound').addEventListener('click', (e) => {
+
+    document.getElementById('btn-sound').addEventListener('click', () => {
       this.audio.muted = !this.audio.muted;
-      e.target.textContent = this.audio.muted ? '🔇' : '🔊';
+      this.saveData.audioSettings.muted = this.audio.muted;
+      SaveManager.save(this.saveData);
+      this.updateSoundButton();
     });
 
-    document.getElementById('btn-levels').addEventListener('click', () => {
-      document.getElementById('levels-modal').classList.remove('hidden');
-    });
+    document.getElementById('btn-levels').addEventListener('click', () => this.openLevelSelect());
+    document.getElementById('btn-close-modal').addEventListener('click', () => this.closeLevelSelect());
 
-    document.getElementById('btn-close-modal').addEventListener('click', () => {
-      document.getElementById('levels-modal').classList.add('hidden');
-    });
-
-    document.querySelectorAll('.level-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        const lvl = parseInt(card.getAttribute('data-level'));
-        this.loadLevel(lvl);
-        document.getElementById('levels-modal').classList.add('hidden');
-      });
+    document.getElementById('btn-reset-progress').addEventListener('click', () => {
+      if (!window.confirm('Erase all saved progress, best times and stars?')) return;
+      const audioSettings = this.saveData.audioSettings;
+      this.saveData = SaveManager.defaults();
+      this.saveData.audioSettings = audioSettings;
+      SaveManager.save(this.saveData);
+      this.renderLevelSelect();
+      this.loadLevel(0);
     });
 
     document.getElementById('btn-next-level').addEventListener('click', () => {
-      if (this.currentLevelIndex < this.levels.length - 1) {
-        this.loadLevel(this.currentLevelIndex + 1);
-      } else {
+      if (this.gameState === 'CAMPAIGN_COMPLETE') {
         this.loadLevel(0);
+      } else {
+        this.nextLevel();
       }
-      document.getElementById('game-overlay').classList.add('hidden');
     });
 
-    document.getElementById('btn-retry-level').addEventListener('click', () => {
-      this.restartLevel();
-      document.getElementById('game-overlay').classList.add('hidden');
-    });
+    document.getElementById('btn-retry-level').addEventListener('click', () => this.restartLevel());
+    document.getElementById('btn-overlay-levels').addEventListener('click', () => this.openLevelSelect());
   }
 
-  get levels() {
-    return [
-      // LEVEL 1: THE BASICS
-      {
-        title: '1: The Basics',
-        objective: 'Guide Lightwalker along light beams and Shadowweaver through darkness to steal the loot and reach the exit!',
-        lightStart: { x: 100, y: 120 },
-        shadowStart: { x: 100, y: 500 },
-        walls: [
-          { x: 300, y: 0, w: 20, h: 250 },
-          { x: 300, y: 380, w: 20, h: 270 },
-          { x: 550, y: 150, w: 20, h: 350 },
-        ],
-        lightSources: [
-          { type: 'spotlight', x: 80, y: 80, angle: 0.35, fov: 0.65, range: 480, rotateSpeed: 0 }
-        ],
-        mirrors: [],
-        prisms: [],
-        gates: [],
-        crates: [],
-        guards: [],
-        loot: { x: 750, y: 120, taken: false },
-        exit: { x: 820, y: 530 }
-      },
-      // LEVEL 2: TIMING & SPOTLIGHTS
-      {
-        title: '2: Timing & Guards',
-        objective: 'Watch out for rotating spotlights! Evade Lumen Guards in light and Nyx Guards in darkness.',
-        lightStart: { x: 80, y: 100 },
-        shadowStart: { x: 80, y: 550 },
-        walls: [
-          { x: 220, y: 0, w: 20, h: 420 },
-          { x: 450, y: 200, w: 20, h: 450 },
-          { x: 680, y: 0, w: 20, h: 450 },
-        ],
-        lightSources: [
-          { type: 'spotlight', x: 80, y: 80, angle: 0, fov: 0.55, range: 500, rotateSpeed: 0.8 }
-        ],
-        mirrors: [],
-        prisms: [],
-        gates: [],
-        crates: [],
-        guards: [
-          { type: 'LUMEN', x: 340, y: 250, patrol: [{x:340,y:100},{x:340,y:400}], speed: 1.5, dir: 1, angle: 0, stunTimer: 0 },
-          { type: 'NYX', x: 560, y: 350, patrol: [{x:560,y:150},{x:560,y:500}], speed: 1.5, dir: 1, angle: Math.PI, stunTimer: 0 }
-        ],
-        loot: { x: 560, y: 80, taken: false },
-        exit: { x: 820, y: 550 }
-      },
-      // LEVEL 3: MIRRORS & CRATES
-      {
-        title: '3: Mirrors & Shadow Bridges',
-        objective: 'Step near the mirror and press [E] to rotate light! Push crates to block beams and create shadow paths.',
-        lightStart: { x: 80, y: 100 },
-        shadowStart: { x: 80, y: 520 },
-        walls: [
-          { x: 250, y: 0, w: 20, h: 220 },
-          { x: 250, y: 340, w: 20, h: 310 },
-          { x: 550, y: 180, w: 20, h: 470 },
-        ],
-        lightSources: [
-          { type: 'spotlight', x: 80, y: 80, angle: 0.1, fov: 0.45, range: 600, rotateSpeed: 0 }
-        ],
-        mirrors: [
-          { x: 210, y: 100, angle: Math.PI / 4, radius: 18 }
-        ],
-        prisms: [],
-        gates: [],
-        crates: [
-          { x: 380, y: 100, w: 40, h: 40 }
-        ],
-        guards: [
-          { type: 'NYX', x: 400, y: 450, patrol: [{x:320,y:450},{x:480,y:450}], speed: 1.2, dir: 1, angle: 0, stunTimer: 0 }
-        ],
-        loot: { x: 400, y: 80, taken: false },
-        exit: { x: 800, y: 520 }
-      },
-      // LEVEL 4: PRISM SPECTRUM HEIST
-      {
-        title: '4: Prism Spectrum Heist',
-        objective: 'Align light into the prism to split white light into Red and Blue spectrum beams to open color gates!',
-        lightStart: { x: 80, y: 100 },
-        shadowStart: { x: 80, y: 520 },
-        walls: [
-          { x: 200, y: 0, w: 20, h: 450 },
-          { x: 450, y: 200, w: 20, h: 450 },
-          { x: 700, y: 0, w: 20, h: 450 },
-        ],
-        lightSources: [
-          { type: 'spotlight', x: 80, y: 80, angle: 0.25, fov: 0.4, range: 600, rotateSpeed: 0 }
-        ],
-        mirrors: [
-          { x: 180, y: 100, angle: Math.PI / 4, radius: 18 }
-        ],
-        prisms: [
-          { x: 180, y: 350, angle: 0 }
-        ],
-        gates: [
-          { id: 'gate-red', x: 450, y: 0, w: 20, h: 200, color: '#ff0055', open: false, reqColor: 'RED' },
-          { id: 'gate-blue', x: 700, y: 450, w: 20, h: 200, color: '#3a86ff', open: false, reqColor: 'BLUE' }
-        ],
-        crates: [],
-        guards: [
-          { type: 'LUMEN', x: 320, y: 250, patrol: [{x:320,y:100},{x:320,y:400}], speed: 1.5, dir: 1, angle: 0, stunTimer: 0 }
-        ],
-        loot: { x: 580, y: 100, taken: false },
-        exit: { x: 820, y: 520 }
+  updateSoundButton() {
+    document.getElementById('btn-sound').textContent = this.audio.muted ? '🔇' : '🔊';
+  }
+
+  isModalOpen() {
+    return !document.getElementById('levels-modal').classList.contains('hidden');
+  }
+
+  openLevelSelect() {
+    this.renderLevelSelect();
+    this.keys = {};
+    document.getElementById('levels-modal').classList.remove('hidden');
+  }
+
+  closeLevelSelect() {
+    document.getElementById('levels-modal').classList.add('hidden');
+  }
+
+  renderLevelSelect() {
+    const grid = document.getElementById('level-grid');
+    grid.innerHTML = '';
+    let totalStars = 0;
+
+    LEVELS.forEach((lvl, i) => {
+      const rec = this.levelRecord(i);
+      const unlocked = this.isLevelUnlocked(i);
+      totalStars += rec.stars || 0;
+
+      const card = document.createElement('div');
+      card.className = 'level-card' + (unlocked ? '' : ' locked') + (rec.completed ? ' completed' : '');
+      card.setAttribute('data-level', String(i));
+
+      const stars = rec.completed ? '★'.repeat(rec.stars || 1) + '☆'.repeat(3 - (rec.stars || 1)) : '☆☆☆';
+      const status = !unlocked
+        ? '🔒 Locked — clear the previous mission'
+        : rec.completed
+          ? `Best ${formatTime(rec.bestTimeSeconds)} · Target ${formatTime(lvl.parTime)}`
+          : `Target time ${formatTime(lvl.parTime)}`;
+
+      card.innerHTML = `
+        <span class="num">${String(i + 1).padStart(2, '0')}</span>
+        <h4>${lvl.title.replace(/^\d+:\s*/, '').toUpperCase()}</h4>
+        <p>${lvl.desc}</p>
+        <div class="level-meta"><span class="stars">${stars}</span><span class="best">${status}</span></div>`;
+
+      if (unlocked) {
+        card.addEventListener('click', () => {
+          this.loadLevel(i);
+          this.closeLevelSelect();
+        });
       }
-    ];
+      grid.appendChild(card);
+    });
+
+    document.getElementById('total-stars').textContent = `★ ${totalStars} / ${LEVELS.length * 3}`;
   }
 
   loadLevel(index) {
     this.currentLevelIndex = index;
-    const lvl = this.levels[index];
-    
+    const lvl = LEVELS[index];
+
     document.getElementById('level-title').textContent = lvl.title;
-    document.getElementById('mission-objective').textContent = lvl.objective;
 
     this.lightChar.x = lvl.lightStart.x;
     this.lightChar.y = lvl.lightStart.y;
     this.shadowChar.x = lvl.shadowStart.x;
     this.shadowChar.y = lvl.shadowStart.y;
 
-    this.walls = JSON.parse(JSON.stringify(lvl.walls));
-    this.lightSources = JSON.parse(JSON.stringify(lvl.lightSources));
-    this.mirrors = JSON.parse(JSON.stringify(lvl.mirrors));
-    this.prisms = JSON.parse(JSON.stringify(lvl.prisms));
-    this.gates = JSON.parse(JSON.stringify(lvl.gates));
-    this.crates = JSON.parse(JSON.stringify(lvl.crates));
-    this.guards = JSON.parse(JSON.stringify(lvl.guards));
-    this.loot = JSON.parse(JSON.stringify(lvl.loot));
-    this.exit = JSON.parse(JSON.stringify(lvl.exit));
+    this.walls = deepCopy(lvl.walls);
+    this.lightSources = deepCopy(lvl.lightSources).map((ls) => ({ ...ls, baseAngle: ls.angle, time: 0 }));
+    this.mirrors = deepCopy(lvl.mirrors);
+    this.prisms = deepCopy(lvl.prisms);
+    this.gates = deepCopy(lvl.gates).map((g) => ({ ...g, open: false }));
+    this.crates = deepCopy(lvl.crates);
+    this.guards = deepCopy(lvl.guards).map((g) => ({ ...g, dir: 1, angle: 0, stunTimer: 0 }));
+    this.loot = { ...deepCopy(lvl.loot), taken: false };
+    this.exit = deepCopy(lvl.exit);
 
     this.activeCharacter = 'LIGHT';
     this.historyStack = [];
+    this.lastDistPushed = 0;
     this.particles = [];
-    this.currentGrace = this.graceTime;
+    this.grace = { LIGHT: this.graceTime, SHADOW: this.graceTime };
     this.gameState = 'PLAYING';
+    this.levelTime = 0;
+    this.rewindsUsed = 0;
+    this.prismActiveLastFrame = false;
+    this.shownTimerText = '';
+    this.keys = {};
+
+    // Bake the starting light so the first frame already shows valid terrain
+    this.calculateLighting();
     this.pushStateHistory();
-    
+
+    document.getElementById('game-overlay').classList.add('hidden');
+    document.getElementById('grace-status').style.display = 'none';
     this.updateUI();
+    this.updateTimerUI();
   }
 
   restartLevel() {
     this.loadLevel(this.currentLevelIndex);
-    document.getElementById('game-overlay').classList.add('hidden');
+  }
+
+  nextLevel() {
+    const next = this.currentLevelIndex + 1;
+    if (next < LEVELS.length && this.isLevelUnlocked(next)) {
+      this.loadLevel(next);
+    }
   }
 
   swapCharacter() {
@@ -407,7 +616,7 @@ class LightShadowEngine {
   updateUI() {
     const cardLight = document.getElementById('card-light');
     const cardShadow = document.getElementById('card-shadow');
-    
+
     if (this.activeCharacter === 'LIGHT') {
       cardLight.classList.add('active');
       cardShadow.classList.remove('active');
@@ -417,16 +626,34 @@ class LightShadowEngine {
     }
 
     const lootPill = document.getElementById('loot-status');
+    lootPill.classList.toggle('done', this.loot.taken);
     lootPill.innerHTML = `<span class="icon">💎</span><span class="text">LOOT: ${this.loot.taken ? '1/1' : '0/1'}</span>`;
+
+    // Mission banner walks the player through the two win steps
+    const lvl = LEVELS[this.currentLevelIndex];
+    document.getElementById('mission-objective').textContent = this.loot.taken
+      ? 'Loot secured! The exit portal is open: bring BOTH Lightwalker and Shadowweaver into it to escape.'
+      : lvl.objective;
+  }
+
+  updateTimerUI() {
+    const lvl = LEVELS[this.currentLevelIndex];
+    const text = `${formatTime(this.levelTime)} / ${formatTime(lvl.parTime)}`;
+    if (text === this.shownTimerText) return;
+    this.shownTimerText = text;
+    const pill = document.getElementById('timer-status');
+    pill.classList.toggle('over-par', this.levelTime > lvl.parTime);
+    pill.innerHTML = `<span class="icon">⏱️</span><span class="text">${text}</span>`;
   }
 
   pushStateHistory() {
     if (this.historyStack.length > 25) this.historyStack.shift();
     this.historyStack.push({
+      active: this.activeCharacter,
       light: { ...this.lightChar },
       shadow: { ...this.shadowChar },
-      mirrors: JSON.parse(JSON.stringify(this.mirrors)),
-      crates: JSON.parse(JSON.stringify(this.crates)),
+      mirrors: deepCopy(this.mirrors),
+      crates: deepCopy(this.crates),
       loot: { ...this.loot }
     });
   }
@@ -435,11 +662,14 @@ class LightShadowEngine {
     if (this.historyStack.length > 1) {
       this.historyStack.pop(); // Pop current
       const state = this.historyStack[this.historyStack.length - 1];
+      this.activeCharacter = state.active;
       this.lightChar = { ...state.light };
       this.shadowChar = { ...state.shadow };
-      this.mirrors = JSON.parse(JSON.stringify(state.mirrors));
-      this.crates = JSON.parse(JSON.stringify(state.crates));
+      this.mirrors = deepCopy(state.mirrors);
+      this.crates = deepCopy(state.crates);
       this.loot = { ...state.loot };
+      this.lastDistPushed = 0;
+      this.rewindsUsed++;
       this.audio.playInteract();
       this.updateUI();
     }
@@ -447,26 +677,33 @@ class LightShadowEngine {
 
   interact() {
     const char = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
-    // Check if near any mirror
+    // Rotate the nearest mirror in reach
+    let nearest = null;
+    let nearestDist = 50;
     this.mirrors.forEach((m) => {
       const dist = Math.hypot(char.x - m.x, char.y - m.y);
-      if (dist < 50) {
-        this.pushStateHistory();
-        m.angle += Math.PI / 8; // Rotate by 22.5 deg
-        if (m.angle >= Math.PI * 2) m.angle = 0;
-        this.audio.playInteract();
+      if (dist < nearestDist) {
+        nearest = m;
+        nearestDist = dist;
       }
     });
+    if (nearest) {
+      this.pushStateHistory();
+      nearest.angle += Math.PI / 8; // Rotate by 22.5 deg
+      if (nearest.angle >= Math.PI - 1e-6) nearest.angle = 0; // a line mirror repeats every 180°
+      this.audio.playInteract();
+    }
   }
 
   // -------------------------------------------------------------
   // GAME LOOP & LOGIC
   // -------------------------------------------------------------
   gameLoop(time) {
-    const dt = Math.min((time - this.lastTime) / 1000, 0.1);
+    // rAF timestamps can precede the constructor's performance.now(): never step backwards
+    const dt = Math.max(0, Math.min((time - this.lastTime) / 1000, 0.1));
     this.lastTime = time;
 
-    if (this.gameState === 'PLAYING') {
+    if (this.gameState === 'PLAYING' && !this.isModalOpen()) {
       this.update(dt);
     }
     this.render();
@@ -475,17 +712,15 @@ class LightShadowEngine {
   }
 
   update(dt) {
-    // 1. Update Light Sources (Rotation)
-    this.lightSources.forEach((ls) => {
-      if (ls.rotateSpeed) {
-        ls.angle += ls.rotateSpeed * dt;
-      }
-    });
+    this.levelTime += dt;
+
+    // 1. Update Light Sources (rotation / pendulum sweep)
+    this.updateLightSources(dt);
 
     // 2. Raycast & Calculate Light Polygons
     this.calculateLighting();
 
-    // 3. Move Active Character (with smooth wall sliding)
+    // 3. Move Active Character (with smooth wall sliding & crate pushing)
     this.handleMovement(dt);
 
     // 4. Update Particles
@@ -493,16 +728,30 @@ class LightShadowEngine {
 
     // 5. Update Guards AI
     this.updateGuards(dt);
+    if (this.gameState !== 'PLAYING') return;
 
     // 6. Check Terrain Constraints (Light vs Shadow)
     this.checkTerrainConstraints(dt);
+    if (this.gameState !== 'PLAYING') return;
 
     // 7. Check Loot & Exit
     this.checkObjectives();
+
+    this.updateTimerUI();
+  }
+
+  updateLightSources(dt) {
+    this.lightSources.forEach((ls) => {
+      ls.time += dt;
+      if (ls.sweep) {
+        ls.angle = ls.baseAngle + ls.sweep.amplitude * Math.sin(ls.time * ls.sweep.speed);
+      } else if (ls.rotateSpeed) {
+        ls.angle += ls.rotateSpeed * dt;
+      }
+    });
   }
 
   handleMovement(dt) {
-    const speed = 170 * dt;
     let dx = 0, dy = 0;
 
     if (this.keys['w'] || this.keys['arrowup']) dy -= 1;
@@ -510,66 +759,84 @@ class LightShadowEngine {
     if (this.keys['a'] || this.keys['arrowleft']) dx -= 1;
     if (this.keys['d'] || this.keys['arrowright']) dx += 1;
 
-    if (dx !== 0 || dy !== 0) {
-      const len = Math.hypot(dx, dy);
-      dx /= len;
-      dy /= len;
+    if (dx === 0 && dy === 0) return;
 
-      const currChar = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
-      const newX = currChar.x + dx * speed;
-      const newY = currChar.y + dy * speed;
+    const len = Math.hypot(dx, dy);
+    dx /= len;
+    dy /= len;
 
-      let moved = false;
+    const currChar = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
+    const touchingCrate = this.crates.some((c) => this.circleRectOverlap(currChar.x + dx * 4, currChar.y + dy * 4, currChar.radius, c));
+    const speed = MOVE_SPEED * dt * (touchingCrate ? PUSH_SPEED_FACTOR : 1);
+    const newX = currChar.x + dx * speed;
+    const newY = currChar.y + dy * speed;
 
-      // Try full movement first
-      if (!this.checkWallCollision(newX, newY, currChar.radius)) {
-        currChar.x = newX;
-        currChar.y = newY;
-        moved = true;
-      } else {
-        // Wall sliding: try X movement independently
-        if (!this.checkWallCollision(newX, currChar.y, currChar.radius)) {
-          currChar.x = newX;
-          moved = true;
-        }
-        // Wall sliding: try Y movement independently
-        if (!this.checkWallCollision(currChar.x, newY, currChar.radius)) {
-          currChar.y = newY;
-          moved = true;
-        }
-      }
-
-      if (moved) {
-        // Push discrete history checkpoints every ~50px of movement
-        this.lastDistPushed += speed;
-        if (this.lastDistPushed > 50) {
-          this.pushStateHistory();
-          this.lastDistPushed = 0;
-        }
-
-        // Spawn particles
-        this.spawnTrailParticle(currChar.x, currChar.y, this.activeCharacter);
-
-        // Play audio footsteps at regular interval
-        this.stepSoundTimer += dt;
-        if (this.stepSoundTimer > 0.22) {
-          if (this.activeCharacter === 'LIGHT') {
-            this.audio.playLightStep();
-          } else {
-            this.audio.playShadowStep();
-          }
-          this.stepSoundTimer = 0;
-        }
-      }
-
-      // Push crates
-      this.crates.forEach((c) => {
-        if (Math.abs(currChar.x - (c.x + c.w / 2)) < c.w / 2 + 15 && Math.abs(currChar.y - (c.y + c.h / 2)) < c.h / 2 + 15) {
-          c.x += dx * speed * 0.6;
-          c.y += dy * speed * 0.6;
-        }
-      });
+    // Try full movement first, then slide along walls on each axis independently
+    let moved = this.tryMove(currChar, newX, newY);
+    if (!moved) {
+      const movedX = this.tryMove(currChar, newX, currChar.y);
+      const movedY = this.tryMove(currChar, currChar.x, newY);
+      moved = movedX || movedY;
     }
+
+    if (moved) {
+      // Push discrete history checkpoints every ~50px of movement
+      this.lastDistPushed += speed;
+      if (this.lastDistPushed > 50) {
+        this.pushStateHistory();
+        this.lastDistPushed = 0;
+      }
+
+      // Spawn particles
+      this.spawnTrailParticle(currChar.x, currChar.y, this.activeCharacter);
+
+      // Play audio footsteps at regular interval
+      this.stepSoundTimer += dt;
+      if (this.stepSoundTimer > 0.22) {
+        if (this.activeCharacter === 'LIGHT') {
+          this.audio.playLightStep();
+        } else {
+          this.audio.playShadowStep();
+        }
+        this.stepSoundTimer = 0;
+      }
+    }
+  }
+
+  // Moves a character if the target spot is free; crates in the way are pushed when they can move
+  tryMove(char, nx, ny) {
+    if (this.checkWallCollision(nx, ny, char.radius)) return false;
+    const pdx = nx - char.x;
+    const pdy = ny - char.y;
+    const blocking = this.crates.filter((c) => this.circleRectOverlap(nx, ny, char.radius, c));
+    for (const c of blocking) {
+      if (!this.canCrateMove(c, pdx, pdy)) return false;
+    }
+    blocking.forEach((c) => {
+      c.x += pdx;
+      c.y += pdy;
+    });
+    char.x = nx;
+    char.y = ny;
+    return true;
+  }
+
+  canCrateMove(crate, pdx, pdy) {
+    const r = { x: crate.x + pdx, y: crate.y + pdy, w: crate.w, h: crate.h };
+    if (r.x < 0 || r.y < 0 || r.x + r.w > this.canvas.width || r.y + r.h > this.canvas.height) return false;
+    const solids = [...this.walls, ...this.gates.filter((g) => !g.open), ...this.crates.filter((c) => c !== crate), ...this.prisms.map(prismRect)];
+    if (solids.some((s) => this.rectsOverlap(r, s))) return false;
+    // A crate can't be shoved onto the parked soul
+    const other = this.activeCharacter === 'LIGHT' ? this.shadowChar : this.lightChar;
+    return !this.circleRectOverlap(other.x, other.y, other.radius, r);
+  }
+
+  rectsOverlap(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  circleRectOverlap(x, y, r, rect) {
+    return x + r > rect.x && x - r < rect.x + rect.w && y + r > rect.y && y - r < rect.y + rect.h;
   }
 
   checkWallCollision(x, y, r) {
@@ -577,17 +844,18 @@ class LightShadowEngine {
     if (x - r < 0 || x + r > this.canvas.width || y - r < 0 || y + r > this.canvas.height) return true;
 
     // Solid walls
-    for (let w of this.walls) {
-      if (x + r > w.x && x - r < w.x + w.w && y + r > w.y && y - r < w.y + w.h) {
-        return true;
-      }
+    for (const w of this.walls) {
+      if (this.circleRectOverlap(x, y, r, w)) return true;
     }
 
     // Closed gates
-    for (let g of this.gates) {
-      if (!g.open && x + r > g.x && x - r < g.x + g.w && y + r > g.y && y - r < g.y + g.h) {
-        return true;
-      }
+    for (const g of this.gates) {
+      if (!g.open && this.circleRectOverlap(x, y, r, g)) return true;
+    }
+
+    // Prism blocks
+    for (const p of this.prisms) {
+      if (this.circleRectOverlap(x, y, r, prismRect(p))) return true;
     }
 
     return false;
@@ -625,90 +893,143 @@ class LightShadowEngine {
   // -------------------------------------------------------------
   // RAYCASTING & LIGHTING CALCULATIONS
   // -------------------------------------------------------------
+  buildSegments(includePrisms) {
+    const segments = [];
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+    const addRect = (r) => {
+      segments.push({ a: { x: r.x, y: r.y }, b: { x: r.x + r.w, y: r.y } });
+      segments.push({ a: { x: r.x + r.w, y: r.y }, b: { x: r.x + r.w, y: r.y + r.h } });
+      segments.push({ a: { x: r.x + r.w, y: r.y + r.h }, b: { x: r.x, y: r.y + r.h } });
+      segments.push({ a: { x: r.x, y: r.y + r.h }, b: { x: r.x, y: r.y } });
+    };
+
+    // Canvas borders
+    segments.push({ a: { x: 0, y: 0 }, b: { x: W, y: 0 } });
+    segments.push({ a: { x: W, y: 0 }, b: { x: W, y: H } });
+    segments.push({ a: { x: W, y: H }, b: { x: 0, y: H } });
+    segments.push({ a: { x: 0, y: H }, b: { x: 0, y: 0 } });
+
+    this.walls.forEach(addRect);
+    this.gates.filter((g) => !g.open).forEach(addRect);
+    this.crates.forEach(addRect);
+    if (includePrisms) this.prisms.map(prismRect).forEach(addRect);
+    return segments;
+  }
+
   calculateLighting() {
     this.lightPolygons = [];
     this.coloredBeams = [];
+    // White light stops at prism blocks; the spectrum beams start inside the prism, so they ignore them
+    const segments = this.buildSegments(true);
+    const spectrumSegments = this.buildSegments(false);
+    this.segments = spectrumSegments; // guards see past prisms (glass)
 
-    // Reset color gate state before re-evaluating live rays
-    this.gates.forEach((g) => g.open = false);
-
-    // Collect all obstacle line segments
-    const segments = [];
-    
-    // Canvas borders
-    segments.push({ a: { x: 0, y: 0 }, b: { x: 900, y: 0 } });
-    segments.push({ a: { x: 900, y: 0 }, b: { x: 900, y: 650 } });
-    segments.push({ a: { x: 900, y: 650 }, b: { x: 0, y: 650 } });
-    segments.push({ a: { x: 0, y: 650 }, b: { x: 0, y: 0 } });
-
-    // Walls
-    this.walls.forEach((w) => {
-      segments.push({ a: { x: w.x, y: w.y }, b: { x: w.x + w.w, y: w.y } });
-      segments.push({ a: { x: w.x + w.w, y: w.y }, b: { x: w.x + w.w, y: w.y + w.h } });
-      segments.push({ a: { x: w.x + w.w, y: w.y + w.h }, b: { x: w.x, y: w.y + w.h } });
-      segments.push({ a: { x: w.x, y: w.y + w.h }, b: { x: w.x, y: w.y } });
-    });
-
-    // Closed Gates
-    this.gates.forEach((g) => {
-      if (!g.open) {
-        segments.push({ a: { x: g.x, y: g.y }, b: { x: g.x + g.w, y: g.y } });
-        segments.push({ a: { x: g.x + g.w, y: g.y }, b: { x: g.x + g.w, y: g.y + g.h } });
-        segments.push({ a: { x: g.x + g.w, y: g.y + g.h }, b: { x: g.x, y: g.y + g.h } });
-        segments.push({ a: { x: g.x, y: g.y }, b: { x: g.x, y: g.y + g.h } });
-      }
-    });
-
-    // Crates
-    this.crates.forEach((c) => {
-      segments.push({ a: { x: c.x, y: c.y }, b: { x: c.x + c.w, y: c.y } });
-      segments.push({ a: { x: c.x + c.w, y: c.y }, b: { x: c.x + c.w, y: c.y + c.h } });
-      segments.push({ a: { x: c.x + c.w, y: c.y + c.h }, b: { x: c.x, y: c.y + c.h } });
-      segments.push({ a: { x: c.x, y: c.y + c.h }, b: { x: c.x, y: c.y } });
-    });
-
-    // Process each light source
+    // Every white beam (source cones and mirror reflections) can feed further optics
+    const beams = [];
     this.lightSources.forEach((ls) => {
-      const poly = this.raycastCone(ls.x, ls.y, ls.angle, ls.fov, ls.range, segments);
-      if (poly.length > 0) {
-        this.lightPolygons.push({ pts: poly, color: 'rgba(255, 230, 150, 0.75)' });
-      }
+      const pts = this.raycastCone(ls.x, ls.y, ls.angle, ls.fov, ls.range, segments);
+      this.lightPolygons.push({ pts, color: 'rgba(255, 230, 150, 0.75)' });
+      beams.push({ x: ls.x, y: ls.y, pts });
+    });
 
-      // Check interactions with mirrors and prisms
-      this.checkOpticsInteractions(ls.x, ls.y, ls.angle, segments);
+    // Optics: a mirror/prism only reacts when a beam actually lights it (each fires once per frame)
+    const usedMirrors = new Set();
+    const usedPrisms = new Set();
+    for (let i = 0; i < beams.length; i++) {
+      const beam = beams[i];
+      this.mirrors.forEach((m) => {
+        if (usedMirrors.has(m) || !this.polyContainsPoint(beam.pts, m)) return;
+        usedMirrors.add(m);
+        const incoming = Math.atan2(m.y - beam.y, m.x - beam.x);
+        const reflectAngle = 2 * m.angle - incoming;
+        const pts = this.raycastCone(m.x, m.y, reflectAngle, m.spread || 0.25, 600, segments);
+        this.lightPolygons.push({ pts, color: 'rgba(255, 240, 180, 0.85)' });
+        beams.push({ x: m.x, y: m.y, pts });
+      });
+      this.prisms.forEach((p) => {
+        if (usedPrisms.has(p)) return;
+        const incoming = Math.atan2(p.y - beam.y, p.x - beam.x);
+        // The beam stops on the prism's face, so test a point just in front of it (clear of corners too)
+        const faceDist = PRISM_HALF * Math.SQRT2 + 6;
+        const face = { x: p.x - Math.cos(incoming) * faceDist, y: p.y - Math.sin(incoming) * faceDist };
+        if (!this.polyContainsPoint(beam.pts, face)) return;
+        usedPrisms.add(p);
+        // White light splits into Red / Green / Blue spectrum laser bands
+        [['RED', -0.45], ['GREEN', 0], ['BLUE', 0.45]].forEach(([type, offset]) => {
+          const pts = this.raycastBand(p.x, p.y, incoming + offset, SPECTRUM_BAND_WIDTH, 650, spectrumSegments);
+          this.coloredBeams.push({ pts, color: BEAM_COLORS[type], type });
+        });
+      });
+    }
+
+    const prismActive = usedPrisms.size > 0;
+    if (prismActive && !this.prismActiveLastFrame) this.audio.playPrism();
+    this.prismActiveLastFrame = prismActive;
+
+    // Color receptors: a gate unlocks (and stays open) once its colour beam reaches the receptor
+    this.gates.forEach((g) => {
+      if (g.open || !g.receptor) return;
+      const hit = this.coloredBeams.some((b) => b.type === g.reqColor && this.polyContainsPoint(b.pts, g.receptor));
+      if (hit) {
+        g.open = true;
+        this.audio.playLoot();
+      }
+    });
+
+    // Nyx Guards are stunned by any light that touches them
+    this.guards.forEach((g) => {
+      if (g.type === 'NYX' && this.isPointInAnyLight(g)) {
+        if (g.stunTimer <= 0) this.audio.playStun();
+        g.stunTimer = 3.0;
+      }
     });
   }
 
   raycastCone(srcX, srcY, angle, fov, range, segments) {
     const points = [{ x: srcX, y: srcY }];
-    const raysCount = 60;
+    const raysCount = Math.max(16, Math.ceil(fov * 90));
     const startAngle = angle - fov / 2;
-    const endAngle = angle + fov / 2;
 
     for (let i = 0; i <= raysCount; i++) {
-      const rayAngle = startAngle + (i / raysCount) * (endAngle - startAngle);
-      const hit = this.getRayIntersection(srcX, srcY, rayAngle, range, segments);
-      points.push(hit);
+      const rayAngle = startAngle + (i / raysCount) * fov;
+      points.push(this.getRayIntersection(srcX, srcY, rayAngle, range, segments));
     }
     return points;
+  }
+
+  // Parallel band of rays (laser): origins spread across `width`, perpendicular to `angle`
+  raycastBand(cx, cy, angle, width, range, segments) {
+    const nx = -Math.sin(angle);
+    const ny = Math.cos(angle);
+    const raysCount = Math.max(8, Math.ceil(width / 4));
+    const origins = [];
+    const hits = [];
+    for (let i = 0; i <= raysCount; i++) {
+      const t = -width / 2 + (i / raysCount) * width;
+      const ox = cx + nx * t;
+      const oy = cy + ny * t;
+      origins.push({ x: ox, y: oy });
+      hits.push(this.getRayIntersection(ox, oy, angle, range, segments));
+    }
+    return [origins[0], ...hits, origins[origins.length - 1]];
   }
 
   getRayIntersection(srcX, srcY, angle, range, segments) {
     const rayDirX = Math.cos(angle);
     const rayDirY = Math.sin(angle);
+    const endX = srcX + rayDirX * range;
+    const endY = srcY + rayDirY * range;
     let closestDist = range;
-    let closestHit = { x: srcX + rayDirX * range, y: srcY + rayDirY * range };
+    let closestHit = { x: endX, y: endY };
 
-    segments.forEach((seg) => {
-      const hit = this.lineIntersection(
-        srcX, srcY, srcX + rayDirX * range, srcY + rayDirY * range,
-        seg.a.x, seg.a.y, seg.b.x, seg.b.y
-      );
+    for (const seg of segments) {
+      const hit = this.lineIntersection(srcX, srcY, endX, endY, seg.a.x, seg.a.y, seg.b.x, seg.b.y);
       if (hit && hit.dist < closestDist) {
         closestDist = hit.dist;
         closestHit = { x: hit.x, y: hit.y };
       }
-    });
+    }
 
     return closestHit;
   }
@@ -729,94 +1050,54 @@ class LightShadowEngine {
     return null;
   }
 
-  checkOpticsInteractions(srcX, srcY, mainAngle, segments) {
-    // Check Mirror reflection
-    this.mirrors.forEach((m) => {
-      const dist = Math.hypot(m.x - srcX, m.y - srcY);
-      if (dist < 400) {
-        const reflectAngle = 2 * m.angle - mainAngle;
-        const poly = this.raycastCone(m.x, m.y, reflectAngle, 0.35, 450, segments);
-        this.lightPolygons.push({ pts: poly, color: 'rgba(255, 240, 180, 0.85)' });
-
-        // Check if reflected ray hits Nyx Guard
-        this.guards.forEach((g) => {
-          if (g.type === 'NYX') {
-            const gDist = Math.hypot(g.x - m.x, g.y - m.y);
-            if (gDist < 350) {
-              if (g.stunTimer <= 0) {
-                this.audio.playStun();
-              }
-              g.stunTimer = 3.0; // Stun Nyx Guard
-            }
-          }
-        });
-      }
-    });
-
-    // Check Prism Refraction (Splits white light into RGB)
-    let prismActiveThisFrame = false;
-    this.prisms.forEach((p) => {
-      const dist = Math.hypot(p.x - srcX, p.y - srcY);
-      if (dist < 450) {
-        prismActiveThisFrame = true;
-        if (!this.prismActiveLastFrame) {
-          this.audio.playPrism();
-        }
-
-        // Red, Green, Blue spectrum beams
-        const redPoly = this.raycastCone(p.x, p.y, mainAngle - 0.2, 0.15, 400, segments);
-        const greenPoly = this.raycastCone(p.x, p.y, mainAngle, 0.15, 400, segments);
-        const bluePoly = this.raycastCone(p.x, p.y, mainAngle + 0.2, 0.15, 400, segments);
-
-        this.coloredBeams.push({ pts: redPoly, color: 'rgba(255, 0, 85, 0.75)', type: 'RED' });
-        this.coloredBeams.push({ pts: greenPoly, color: 'rgba(56, 176, 0, 0.75)', type: 'GREEN' });
-        this.coloredBeams.push({ pts: bluePoly, color: 'rgba(58, 134, 255, 0.75)', type: 'BLUE' });
-
-        // Check Color Gates activation
-        this.gates.forEach((g) => {
-          if (g.reqColor === 'RED' && this.polyContainsPoint(redPoly, { x: g.x + 10, y: g.y + 50 })) {
-            g.open = true;
-          }
-          if (g.reqColor === 'BLUE' && this.polyContainsPoint(bluePoly, { x: g.x + 10, y: g.y + 50 })) {
-            g.open = true;
-          }
-        });
-      }
-    });
-    this.prismActiveLastFrame = prismActiveThisFrame;
-  }
-
   // -------------------------------------------------------------
   // TERRAIN CONSTRAINTS & GUARDS LOGIC
   // -------------------------------------------------------------
+  isInExitPortal(pt) {
+    return Math.hypot(pt.x - this.exit.x, pt.y - this.exit.y) < EXIT_RADIUS;
+  }
+
+  isTerrainValid(type) {
+    const char = type === 'LIGHT' ? this.lightChar : this.shadowChar;
+    // The exit portal is twilight: neutral ground for both souls
+    if (this.isInExitPortal(char)) return true;
+    const lit = this.isPointInAnyLight(char);
+    return type === 'LIGHT' ? lit : !lit;
+  }
+
   checkTerrainConstraints(dt) {
-    const isLightInLight = this.isPointInAnyLight(this.lightChar);
-    const isShadowInDark = !this.isPointInAnyLight(this.shadowChar);
-
-    const currValid = this.activeCharacter === 'LIGHT' ? isLightInLight : isShadowInDark;
-
     const gracePill = document.getElementById('grace-status');
 
-    if (!currValid) {
-      this.currentGrace -= dt;
+    ['LIGHT', 'SHADOW'].forEach((type) => {
+      const valid = this.isTerrainValid(type);
+      if (valid) {
+        this.grace[type] = this.graceTime;
+      } else if (type === this.activeCharacter) {
+        this.grace[type] -= dt;
+      }
+    });
+
+    const active = this.activeCharacter;
+    if (this.grace[active] < this.graceTime) {
       gracePill.style.display = 'flex';
-      const pct = Math.max(0, Math.floor((this.currentGrace / this.graceTime) * 100));
+      const pct = Math.max(0, Math.floor((this.grace[active] / this.graceTime) * 100));
       gracePill.innerHTML = `<span class="icon">⚠️</span><span class="text">GRACE: ${pct}%</span>`;
 
-      if (this.currentGrace <= 0) {
-        this.triggerGameOver('CAUGHT IN INVALID TERRAIN', 'Light cannot enter shadows, and Shadow cannot touch light beams!');
+      if (this.grace[active] <= 0) {
+        this.triggerGameOver('CAUGHT IN INVALID TERRAIN', active === 'LIGHT'
+          ? 'Lightwalker lingered in the shadows too long. Light cannot survive outside the beams!'
+          : 'Shadowweaver was exposed by the light too long. Shadow cannot touch light beams!');
       }
     } else {
-      this.currentGrace = this.graceTime;
       gracePill.style.display = 'none';
     }
   }
 
   isPointInAnyLight(pt) {
-    for (let poly of this.lightPolygons) {
+    for (const poly of this.lightPolygons) {
       if (this.polyContainsPoint(poly.pts, pt)) return true;
     }
-    for (let beam of this.coloredBeams) {
+    for (const beam of this.coloredBeams) {
       if (this.polyContainsPoint(beam.pts, pt)) return true;
     }
     return false;
@@ -833,114 +1114,185 @@ class LightShadowEngine {
     return inside;
   }
 
+  // Vision cone check with line of sight: walls, closed gates and crates block a guard's view
+  guardCanSee(g, target) {
+    const dist = Math.hypot(target.x - g.x, target.y - g.y);
+    if (dist > 160) return false;
+    const angleTo = Math.atan2(target.y - g.y, target.x - g.x);
+    if (Math.abs(normalizeAngle(angleTo - g.angle)) > 0.4) return false;
+    const hit = this.getRayIntersection(g.x, g.y, angleTo, dist, this.segments);
+    return Math.hypot(hit.x - g.x, hit.y - g.y) >= dist - 1;
+  }
+
   updateGuards(dt) {
-    this.guards.forEach((g) => {
+    for (const g of this.guards) {
       if (g.stunTimer > 0) {
         g.stunTimer -= dt;
-        return; // Guard is stunned!
+        continue; // Guard is stunned!
       }
 
       // Patrol movement
       const target = g.patrol[g.dir];
       const dist = Math.hypot(target.x - g.x, target.y - g.y);
-      if (dist < 5) {
+      const step = g.speed * 60 * dt;
+      g.angle = Math.atan2(target.y - g.y, target.x - g.x);
+      if (dist <= step) {
+        g.x = target.x;
+        g.y = target.y;
         g.dir = (g.dir + 1) % g.patrol.length;
       } else {
-        const angle = Math.atan2(target.y - g.y, target.x - g.x);
-        g.angle = angle;
-        g.x += Math.cos(angle) * g.speed;
-        g.y += Math.sin(angle) * g.speed;
+        g.x += Math.cos(g.angle) * step;
+        g.y += Math.sin(g.angle) * step;
       }
 
-      // Check Vision Cone against Player
-      if (g.type === 'LUMEN') {
-        const pDist = Math.hypot(this.lightChar.x - g.x, this.lightChar.y - g.y);
-        if (pDist < 160) {
-          const pAngle = Math.atan2(this.lightChar.y - g.y, this.lightChar.x - g.x);
-          if (Math.abs(pAngle - g.angle) < 0.4) {
-            this.triggerGameOver('SPOTTED BY LUMEN GUARD!', 'Lumen Guards patrol illuminated corridors and spotted Lightwalker!');
-          }
-        }
-      } else if (g.type === 'NYX') {
-        const pDist = Math.hypot(this.shadowChar.x - g.x, this.shadowChar.y - g.y);
-        if (pDist < 160) {
-          const pAngle = Math.atan2(this.shadowChar.y - g.y, this.shadowChar.x - g.x);
-          if (Math.abs(pAngle - g.angle) < 0.4) {
-            this.triggerGameOver('SPOTTED BY NYX GUARD!', 'Nyx Guards have night-vision and spotted Shadowweaver in darkness!');
-          }
-        }
+      // Lumen Guards hunt Lightwalker, Nyx Guards hunt Shadowweaver
+      if (g.type === 'LUMEN' && this.guardCanSee(g, this.lightChar)) {
+        this.triggerGameOver('SPOTTED BY LUMEN GUARD!', 'Lumen Guards patrol illuminated corridors and spotted Lightwalker!');
+        return;
       }
-    });
+      if (g.type === 'NYX' && this.guardCanSee(g, this.shadowChar)) {
+        this.triggerGameOver('SPOTTED BY NYX GUARD!', 'Nyx Guards have night-vision and spotted Shadowweaver in darkness!');
+        return;
+      }
+    }
   }
 
   checkObjectives() {
-    // Steal Loot
+    // Steal Loot (either soul can grab it)
     if (!this.loot.taken) {
       const char = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
       const dist = Math.hypot(char.x - this.loot.x, char.y - this.loot.y);
-      if (dist < 30) {
+      if (dist < LOOT_RADIUS) {
         this.loot.taken = true;
+        this.pushStateHistory();
         this.audio.playLoot();
         this.updateUI();
       }
     }
 
-    // Reach Exit
-    if (this.loot.taken) {
-      const distL = Math.hypot(this.lightChar.x - this.exit.x, this.lightChar.y - this.exit.y);
-      const distS = Math.hypot(this.shadowChar.x - this.exit.x, this.shadowChar.y - this.exit.y);
-      if (distL < 45 && distS < 45) {
-        this.gameState = 'WIN';
-        this.audio.playWin();
-        document.getElementById('overlay-title').textContent = 'MISSION ACCOMPLISHED!';
-        document.getElementById('overlay-msg').textContent = 'Both Lightwalker and Shadowweaver secured the loot and escaped cleanly!';
-        document.getElementById('btn-next-level').style.display = 'inline-flex';
-        document.getElementById('game-overlay').classList.remove('hidden');
-      }
+    // Escape: loot secured and both souls inside the exit portal
+    if (this.loot.taken && this.isInExitPortal(this.lightChar) && this.isInExitPortal(this.shadowChar)) {
+      this.completeLevel();
+    }
+  }
+
+  starsFor(time, rewinds, parTime) {
+    if (time > parTime) return 1;
+    return rewinds === 0 ? 3 : 2;
+  }
+
+  completeLevel() {
+    const index = this.currentLevelIndex;
+    const lvl = LEVELS[index];
+    const time = this.levelTime;
+    const stars = this.starsFor(time, this.rewindsUsed, lvl.parTime);
+
+    // Persist the result (DDD §4: unlockedLevelIndex + per-level best time)
+    const key = `level_${index}`;
+    const prev = this.saveData.highScores[key];
+    const newBest = !prev || !prev.completed || time < prev.bestTimeSeconds;
+    this.saveData.highScores[key] = {
+      completed: true,
+      bestTimeSeconds: newBest ? Math.round(time * 10) / 10 : prev.bestTimeSeconds,
+      stars: Math.max(stars, (prev && prev.stars) || 0)
+    };
+    this.saveData.unlockedLevelIndex = Math.max(this.saveData.unlockedLevelIndex, Math.min(index + 1, LEVELS.length - 1));
+    SaveManager.save(this.saveData);
+
+    this.audio.playWin();
+    this.updateTimerUI();
+
+    const isFinal = index === LEVELS.length - 1;
+    const best = this.saveData.highScores[key].bestTimeSeconds;
+    const starText = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+    const rows = [
+      ['Time', `${formatTime(time)}${newBest ? ' (new best!)' : ''}`],
+      ['Target', `${formatTime(lvl.parTime)} ${time <= lvl.parTime ? '✔' : '✘'}`],
+      ['Best', formatTime(best)],
+      ['Rewinds', String(this.rewindsUsed)],
+      ['Rating', starText]
+    ];
+
+    if (isFinal) {
+      // End of the campaign: summarise every mission
+      this.gameState = 'CAMPAIGN_COMPLETE';
+      let totalStars = 0;
+      let totalTime = 0;
+      let allDone = true;
+      LEVELS.forEach((_, i) => {
+        const rec = this.levelRecord(i);
+        totalStars += rec.stars || 0;
+        if (rec.completed) totalTime += rec.bestTimeSeconds;
+        else allDone = false;
+      });
+      rows.push(['Heist total (best)', allDone ? formatTime(totalTime) : '—']);
+      rows.push(['Campaign stars', `${totalStars} / ${LEVELS.length * 3}`]);
+      this.showOverlay('HEIST COMPLETE!',
+        'The final vault is empty and both souls slipped away unseen. Two souls, one perfect heist. Replay missions to beat your target times and earn every star.',
+        rows, 'Play Again ⟲');
+    } else {
+      this.gameState = 'WIN';
+      this.showOverlay('MISSION ACCOMPLISHED!',
+        `Both Lightwalker and Shadowweaver secured the loot and escaped. Mission ${index + 2} is now unlocked.`,
+        rows, 'Next Level ➔');
     }
   }
 
   triggerGameOver(title, msg) {
+    if (this.gameState !== 'PLAYING') return;
     this.gameState = 'FAIL';
     this.audio.playStun();
+    this.showOverlay(title, msg, [], null);
+  }
+
+  showOverlay(title, msg, rows, nextLabel) {
     document.getElementById('overlay-title').textContent = title;
     document.getElementById('overlay-msg').textContent = msg;
-    document.getElementById('btn-next-level').style.display = 'none';
+
+    const stats = document.getElementById('overlay-stats');
+    stats.innerHTML = '';
+    rows.forEach(([label, value]) => {
+      const row = document.createElement('div');
+      row.className = 'stat-row';
+      row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-value">${value}</span>`;
+      stats.appendChild(row);
+    });
+    stats.style.display = rows.length ? 'grid' : 'none';
+
+    const nextBtn = document.getElementById('btn-next-level');
+    nextBtn.style.display = nextLabel ? 'inline-flex' : 'none';
+    if (nextLabel) nextBtn.textContent = nextLabel;
+    document.getElementById('btn-retry-level').textContent = this.gameState === 'FAIL' ? 'Try Again' : 'Replay Level';
+
+    document.getElementById('grace-status').style.display = 'none';
     document.getElementById('game-overlay').classList.remove('hidden');
   }
 
   // -------------------------------------------------------------
   // RENDERING ENGINE
   // -------------------------------------------------------------
+  fillPolygon(pts, color) {
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    pts.forEach((pt, i) => {
+      if (i === 0) this.ctx.moveTo(pt.x, pt.y);
+      else this.ctx.lineTo(pt.x, pt.y);
+    });
+    this.ctx.closePath();
+    this.ctx.fill();
+  }
+
   render() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // 1. Draw Floor Tile Grid Pattern
     this.drawGrid();
 
-    // 2. Draw Light Polygons (Sun & Spotlights)
-    this.lightPolygons.forEach((poly) => {
-      this.ctx.fillStyle = poly.color;
-      this.ctx.beginPath();
-      poly.pts.forEach((pt, i) => {
-        if (i === 0) this.ctx.moveTo(pt.x, pt.y);
-        else this.ctx.lineTo(pt.x, pt.y);
-      });
-      this.ctx.closePath();
-      this.ctx.fill();
-    });
+    // 2. Draw Light Polygons (Spotlights, Lamps & Reflections)
+    this.lightPolygons.forEach((poly) => this.fillPolygon(poly.pts, poly.color));
 
     // 3. Draw Colored Prism Spectrum Beams
-    this.coloredBeams.forEach((beam) => {
-      this.ctx.fillStyle = beam.color;
-      this.ctx.beginPath();
-      beam.pts.forEach((pt, i) => {
-        if (i === 0) this.ctx.moveTo(pt.x, pt.y);
-        else this.ctx.lineTo(pt.x, pt.y);
-      });
-      this.ctx.closePath();
-      this.ctx.fill();
-    });
+    this.coloredBeams.forEach((beam) => this.fillPolygon(beam.pts, beam.color));
 
     // 4. Draw Particles Trail
     this.particles.forEach((p) => {
@@ -963,23 +1315,54 @@ class LightShadowEngine {
     });
 
     this.gates.forEach((g) => {
+      this.ctx.lineWidth = 2;
       if (!g.open) {
         this.ctx.fillStyle = g.color;
         this.ctx.fillRect(g.x, g.y, g.w, g.h);
         this.ctx.strokeStyle = '#fff';
         this.ctx.strokeRect(g.x, g.y, g.w, g.h);
+      } else {
+        this.ctx.setLineDash([4, 4]);
+        this.ctx.strokeStyle = g.color;
+        this.ctx.strokeRect(g.x, g.y, g.w, g.h);
+        this.ctx.setLineDash([]);
+      }
+
+      // Colour receptor that unlocks this gate
+      if (g.receptor) {
+        this.ctx.save();
+        this.ctx.fillStyle = g.open ? g.color : '#11141d';
+        this.ctx.strokeStyle = g.color;
+        this.ctx.lineWidth = 3;
+        if (g.open) {
+          this.ctx.shadowColor = g.color;
+          this.ctx.shadowBlur = 16;
+        }
+        this.ctx.beginPath();
+        this.ctx.arc(g.receptor.x, g.receptor.y, 9, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.restore();
       }
     });
 
     // 6. Draw Crates
     this.crates.forEach((c) => {
+      this.ctx.lineWidth = 2;
       this.ctx.fillStyle = '#6c584c';
       this.ctx.strokeStyle = '#adc178';
       this.ctx.fillRect(c.x, c.y, c.w, c.h);
       this.ctx.strokeRect(c.x, c.y, c.w, c.h);
+      this.ctx.beginPath();
+      this.ctx.moveTo(c.x, c.y);
+      this.ctx.lineTo(c.x + c.w, c.y + c.h);
+      this.ctx.moveTo(c.x + c.w, c.y);
+      this.ctx.lineTo(c.x, c.y + c.h);
+      this.ctx.stroke();
     });
 
-    // 7. Draw Mirrors
+    // 7. Draw Mirrors (with interaction hint when in reach)
+    const activeChar = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
     this.mirrors.forEach((m) => {
       this.ctx.save();
       this.ctx.translate(m.x, m.y);
@@ -987,8 +1370,14 @@ class LightShadowEngine {
       this.ctx.fillStyle = '#00f5d4';
       this.ctx.fillRect(-18, -4, 36, 8);
       this.ctx.strokeStyle = '#fff';
+      this.ctx.lineWidth = 1;
       this.ctx.strokeRect(-18, -4, 36, 8);
       this.ctx.restore();
+      if (Math.hypot(activeChar.x - m.x, activeChar.y - m.y) < 50) {
+        this.ctx.fillStyle = '#00f5d4';
+        this.ctx.font = '12px Outfit';
+        this.ctx.fillText('[E] rotate', m.x - 26, m.y - 22);
+      }
     });
 
     // 8. Draw Prisms
@@ -1001,29 +1390,28 @@ class LightShadowEngine {
       this.ctx.closePath();
       this.ctx.fill();
       this.ctx.strokeStyle = '#ff0055';
+      this.ctx.lineWidth = 2;
       this.ctx.stroke();
     });
 
     // 9. Draw Light Sources (Lamps/Spotlights)
+    this.ctx.save();
+    this.ctx.shadowColor = '#ffb830';
+    this.ctx.shadowBlur = 15;
+    this.ctx.fillStyle = '#ffb830';
     this.lightSources.forEach((ls) => {
-      this.ctx.fillStyle = '#ffb830';
       this.ctx.beginPath();
       this.ctx.arc(ls.x, ls.y, 12, 0, Math.PI * 2);
       this.ctx.fill();
-      this.ctx.shadowColor = '#ffb830';
-      this.ctx.shadowBlur = 15;
     });
-    this.ctx.shadowBlur = 0;
+    this.ctx.restore();
 
-    // 10. Draw Guards
+    // 10. Draw Guards (vision cones respect walls)
     this.guards.forEach((g) => {
-      // Draw Vision Cone
-      this.ctx.fillStyle = g.type === 'LUMEN' ? 'rgba(255, 184, 48, 0.2)' : 'rgba(157, 78, 221, 0.2)';
-      this.ctx.beginPath();
-      this.ctx.moveTo(g.x, g.y);
-      this.ctx.arc(g.x, g.y, 160, g.angle - 0.4, g.angle + 0.4);
-      this.ctx.closePath();
-      this.ctx.fill();
+      if (g.stunTimer <= 0) {
+        const cone = this.raycastCone(g.x, g.y, g.angle, 0.8, 160, this.segments);
+        this.fillPolygon(cone, g.type === 'LUMEN' ? 'rgba(255, 184, 48, 0.2)' : 'rgba(157, 78, 221, 0.25)');
+      }
 
       // Guard Body
       this.ctx.fillStyle = g.type === 'LUMEN' ? '#3a86ff' : '#7209b7';
@@ -1048,17 +1436,20 @@ class LightShadowEngine {
       this.ctx.fillText('💎 LOOT', this.loot.x - 22, this.loot.y - 15);
     }
 
-    // 12. Draw Exit Portal
-    this.ctx.fillStyle = 'rgba(56, 176, 0, 0.4)';
-    this.ctx.strokeStyle = '#38b000';
+    // 12. Draw Exit Portal (sealed until the loot is secured)
+    const exitOpen = this.loot.taken;
+    this.ctx.fillStyle = exitOpen ? 'rgba(56, 176, 0, 0.4)' : 'rgba(138, 150, 168, 0.15)';
+    this.ctx.strokeStyle = exitOpen ? '#38b000' : '#8a96a8';
     this.ctx.lineWidth = 3;
+    if (!exitOpen) this.ctx.setLineDash([6, 5]);
     this.ctx.beginPath();
-    this.ctx.arc(this.exit.x, this.exit.y, 24, 0, Math.PI * 2);
+    this.ctx.arc(this.exit.x, this.exit.y, EXIT_RADIUS - 6, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.stroke();
+    this.ctx.setLineDash([]);
     this.ctx.font = '11px Outfit';
     this.ctx.fillStyle = '#fff';
-    this.ctx.fillText('EXIT', this.exit.x - 12, this.exit.y + 4);
+    this.ctx.fillText(exitOpen ? 'EXIT' : '🔒 EXIT', this.exit.x - (exitOpen ? 12 : 20), this.exit.y + 4);
 
     // 13. Draw Characters
     // Lightwalker (Golden Aura)
@@ -1069,6 +1460,7 @@ class LightShadowEngine {
     this.ctx.arc(this.lightChar.x, this.lightChar.y, this.lightChar.radius, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.fillStyle = '#000';
+    this.ctx.font = '11px Outfit';
     this.ctx.fillText('☀️', this.lightChar.x - 7, this.lightChar.y + 5);
 
     // Shadowweaver (Purple Aura)
@@ -1102,7 +1494,7 @@ class LightShadowEngine {
   }
 }
 
-// Launch Engine on Load
+// Launch Engine on Load (exposed for debugging from the browser console)
 window.addEventListener('load', () => {
-  new LightShadowEngine();
+  window.lightShadowGame = new LightShadowEngine();
 });
