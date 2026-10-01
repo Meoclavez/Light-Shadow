@@ -28,7 +28,7 @@ flowchart TD
     ReceptorCheck -- Yes --> OpenGate["Open Gate (Latched until Restart)"]
     OpenGate --> InputLoop
     
-    InputLoop -- Swap Character --> SwitchChar["Toggle Control between Light & Shadow (Soundtrack Crossfades)"]
+    InputLoop -- Swap Character --> SwitchChar["Toggle Control between Light & Shadow"]
     SwitchChar --> InputLoop
 
     InputLoop -- "Pause (P / Esc / Pause Button) or Tab Hidden" --> Paused

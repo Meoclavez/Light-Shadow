@@ -66,12 +66,12 @@ Then visit `http://localhost:8000` in your web browser. Create an account (or si
 | Pause / resume | `P` / `Esc` / ⏸️ button (`Esc` closes an open modal first) | ⏸️ button |
 | Settings (touch controls, tilt, left-handed, vibration) | ⚙️ button (`Esc` closes it) | ⚙️ button |
 | Full screen | — | ⛶ button (touch mode only; hidden if the browser cannot do it) |
-| Toggle the ambient soundtrack (saved per account) / mute all sound | 🎵 / 🔊 buttons | 🎵 / 🔊 buttons |
+| Mute / unmute all sound (saved per account) | 🔊 button | 🔊 button |
 | Save the mission snapshot, sign out, return to the login page | **Sign Out** button (🚪 on narrow screens) | 🚪 button |
 
 If a key is held, the keyboard overrides the joystick and tilt.
 
-The soundtrack starts on your first key press or click (browsers block audio autoplay). It crossfades between a bright *Light* voicing and a deep *Shadow* voicing whenever you swap souls.
+All sound is short procedural sound effects (footsteps, swap, mirror click, prism chime, loot, stun/alarm, victory fanfare, mission-start and pause cues); there is no background music.
 
 ---
 
@@ -134,7 +134,7 @@ The campaign maximum is **12 stars**.
 * Winning Mission 4 ends the campaign with a **HEIST COMPLETE!** screen showing the heist total (sum of best times) and campaign stars, with **Play Again ⟲** (restarts at Mission 1), **Replay Level** and **Levels** buttons.
 
 ### Save Data
-Progress (unlocked missions, best times, stars, last mission, mid-level snapshot), audio settings (mute, music) and control settings (touch controls, tilt, tilt sensitivity, left-handed layout, vibration) are stored in the browser's `localStorage` under a per-account key `LIGHT_SHADOW_SAVEDATA::<lowercase username>`. (The shared key `LIGHT_SHADOW_SAVEDATA` is only used when no account/session exists, e.g. in the headless tests.) Corrupt or blocked storage falls back to a fresh profile. See `07_Database_Design_Document.md` §4–§5 for the schemas.
+Progress (unlocked missions, best times, stars, last mission, mid-level snapshot), audio settings (mute, volume) and control settings (touch controls, tilt, tilt sensitivity, left-handed layout, vibration) are stored in the browser's `localStorage` under a per-account key `LIGHT_SHADOW_SAVEDATA::<lowercase username>`. (The shared key `LIGHT_SHADOW_SAVEDATA` is only used when no account/session exists, e.g. in the headless tests.) Corrupt or blocked storage falls back to a fresh profile. See `07_Database_Design_Document.md` §4–§5 for the schemas.
 
 ---
 
@@ -194,8 +194,8 @@ The game is a plain static site (no build step, no server, no database, no envir
 * **Player accounts:** new login page (`index.html`, `login.css`, `login.js`) with Sign In / Create Account, a saved-player picker and an animated light-and-shadow background with UI sounds; the game moved to `game.html`, which redirects to the login page when nobody is signed in. Accounts (`auth.js`) are browser-only with salted, iterated SHA-256 password hashes.
 * **Per-account progress & resume:** each account has its own save key; a mid-level snapshot is autosaved and restored exactly (opening paused on a WELCOME BACK card); the last mission is remembered.
 * **Pause:** new `PAUSED` state (`P` / `Esc` / ⏸️) with Continue / Restart Level / Levels; the game also pauses when the tab is hidden.
-* **Sound & animation:** adaptive ambient soundtrack that crossfades between Light and Shadow voicings on every swap (🎵 toggle), mission-start and pause cues, mission intro title card, toasts, page fade transitions, loot bob, swirling exit portal, controlled-soul ring, victory particle burst.
-* **Header:** player badge, Pause, Music and Sign Out buttons.
+* **Sound & animation:** adaptive ambient soundtrack that crossfaded between Light and Shadow voicings on every swap (🎵 toggle; later removed after user feedback, along with the Music button and the `audioSettings.music` save field), mission-start and pause cues, mission intro title card, toasts, page fade transitions, loot bob, swirling exit portal, controlled-soul ring, victory particle burst.
+* **Header:** player badge, Pause, Music (later removed) and Sign Out buttons.
 * **Hosting:** `vercel.json` + `.vercelignore` for static Vercel deployment.
 * **Tests:** 12/12 passing (4 new account/progress/resume tests).
 * **Phones, tablets & any window size:** new `mobile.js`. The playfield scales to fit every screen (max 1.4× on desktop); the header compacts below 1200 px and the sidebar hides below 1100 px (fixes a header overflow at ~1024 px); result/pause cards go full-screen on small screens.

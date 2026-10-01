@@ -136,7 +136,6 @@ erDiagram
         int lastLevelIndex "mission to open next time"
         boolean muted
         float volume
-        boolean music "ambient soundtrack on/off"
     }
 
     SETTINGS {

@@ -49,7 +49,7 @@ graph TD
         NFR1["NFR-1: Performance (<1ms Raycaster, 60+ FPS)"]
         NFR2["NFR-2: Usability & Glassmorphism Noir Aesthetic"]
         NFR2_1["Pause / Resume (P, Esc, Auto-Pause on Hidden Tab)"]
-        NFR2_2["Procedural Web Audio & Adaptive Ambient Soundtrack"]
+        NFR2_2["Procedural Web Audio Sound Effects"]
         NFR2_3["Feedback Animations (Reduced-Motion Aware)"]
         NFR2_4["No Keyboard Needed, Left-Handed Layout, Thumb-Sized Targets"]
         NFR3["NFR-3: Modular Engine Architecture (Engine / Auth / Login)"]

@@ -32,7 +32,6 @@ graph LR
         UC19(["Remove Account (Password Required)"])
         UC20(["Continue Saved Heist (Welcome Back)"])
         UC21(["Pause / Resume"])
-        UC22(["Toggle Music"])
 
         UC23(["Move with Touch Joystick"])
         UC24(["Steer by Tilt"])
@@ -59,7 +58,6 @@ graph LR
     Player --> UC19
     Player --> UC20
     Player --> UC21
-    Player --> UC22
     Player --> UC23
     Player --> UC24
     Player --> UC25

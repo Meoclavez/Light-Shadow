@@ -30,7 +30,7 @@ This workspace contains the Game Design Document (GDD), Phase 2 Requirement Anal
 ### Playable Web Game Engine & Prototype
 - [index.html](file:///home/meoclavezz/Projects/P-Game/index.html) + [login.css](file:///home/meoclavezz/Projects/P-Game/login.css) + [login.js](file:///home/meoclavezz/Projects/P-Game/login.js): animated login page (Sign In / Create Account, saved-player chips, Continue-as, UI sound effects, animated spotlight background). Entry point of the site.
 - [auth.js](file:///home/meoclavezz/Projects/P-Game/auth.js): `window.LightShadowAuth` — browser-only accounts in localStorage `LIGHT_SHADOW_ACCOUNTS` (salted, 2000× SHA-256), session key `LIGHT_SHADOW_SESSION` (sessionStorage, + localStorage when "stay signed in"), `saveKeyFor(user)` → `LIGHT_SHADOW_SAVEDATA::<user>`.
-- [game.html](file:///home/meoclavezz/Projects/P-Game/game.html): game UI (moved from index.html); loads auth.js first and redirects to index.html when nobody is signed in. Header: player badge, pause, music, sound, rewind, restart, levels, sign out.
+- [game.html](file:///home/meoclavezz/Projects/P-Game/game.html): game UI (moved from index.html); loads auth.js first and redirects to index.html when nobody is signed in. Header: player badge, pause, settings, full screen (touch), sound, rewind, restart, levels, sign out.
 - [style.css](file:///home/meoclavezz/Projects/P-Game/style.css): dark noir design system + game animations (intro card, toast, page transitions) + responsive breakpoints (1200/1100/900/480 px, landscape ≤600 px tall) and the `body.touch-ui` touch layout.
 - [mobile.js](file:///home/meoclavezz/Projects/P-Game/mobile.js): `MobileControls` — fits the 900×650 canvas to its panel, floating analog joystick + SWAP/ROTATE/UNDO buttons, optional DeviceOrientation tilt steering (orientation-aware mapping, calibration, sensitivity), full screen, haptics and the ⚙️ Settings modal. Input priority: keyboard > joystick > tilt (engine.analogInput).
 - [vercel.json](file:///home/meoclavezz/Projects/P-Game/vercel.json) / [.vercelignore](file:///home/meoclavezz/Projects/P-Game/.vercelignore): static Vercel hosting (cleanUrls, security headers; deploy excludes docs/tests/.agents).
@@ -42,7 +42,7 @@ This workspace contains the Game Design Document (GDD), Phase 2 Requirement Anal
   - Dual Character Controller: Lightwalker (light-only) & Shadowweaver (dark-only), per-soul 0.5 s grace meter, step rewind (`Z`). Exit portal is neutral "twilight" ground.
   - End logic: win = loot + both souls in exit; target time + 1–3 stars (★★★ = under target with no rewinds); next level unlocks on win; final level shows the "HEIST COMPLETE!" campaign screen (state `CAMPAIGN_COMPLETE`).
   - Continue-where-you-left-off: per-account save holds `lastLevelIndex` + `inProgress` mid-level snapshot (autosaved every 2 s, on pause/tab hide/pagehide/sign out; cleared on win/fail/fresh load); restored PAUSED with a "WELCOME BACK" overlay. PAUSED state via P/Esc.
-  - Ambient Web Audio soundtrack crossfading Light/Shadow voicings on swap; intro card, toasts, portal swirl, loot bob, victory burst.
+  - Sound effects only (no background music — the ambient soundtrack was removed on Oct 1, 2026 after the user found the drone uncomfortable; don't reintroduce continuous background audio without asking). Animations: intro card, toasts, portal swirl, loot bob, victory burst.
   - Debug handle: `window.lightShadowGame`.
 - [tests/playthrough.test.js](file:///home/meoclavezz/Projects/P-Game/tests/playthrough.test.js): dependency-free headless regression suite (Node `vm` sandbox + stubbed DOM; a bot plays every level with simulated key presses).
 
@@ -58,5 +58,5 @@ This workspace contains the Game Design Document (GDD), Phase 2 Requirement Anal
 
 ## Status (October 1, 2026)
 - Start-up crash fix + end logic merged to main (695cc10).
-- Login page, browser-only multi-account system, continue-where-you-left-off, pause, soundtrack/animations and Vercel config implemented and verified (headless Chrome end-to-end flow).
+- Login page, browser-only multi-account system, continue-where-you-left-off, pause, sound effects/animations and Vercel config implemented and verified (headless Chrome end-to-end flow).
 - Mobile: responsive layout, touch joystick/buttons (primary), optional tilt, settings modal (per-account `settings`), haptics — verified 16/16 tests + phone emulation. Committed and pushed to main.

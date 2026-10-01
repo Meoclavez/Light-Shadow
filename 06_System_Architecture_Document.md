@@ -4,7 +4,7 @@
 **Repository Directory:** `/home/meoclavezz/Projects/P-Game`  
 **Phase:** Phase 3 – Design & Planning  
 **Date:** August 2026  
-**Last Updated:** October 1, 2026 (post-Phase 3 engine fixes & game completion; player accounts, resume snapshots, pause, adaptive soundtrack & Vercel hosting; mobile, touch & tilt controls, responsive playfield & Settings)  
+**Last Updated:** October 1, 2026 (post-Phase 3 engine fixes & game completion; player accounts, resume snapshots, pause & Vercel hosting; mobile, touch & tilt controls, responsive playfield & Settings)  
 
 ---
 
@@ -70,7 +70,7 @@ The system architecture comprises a login page with an account module, and the g
 | OPTICS & RAYCASTER |   | ENTITY & AI ENGINE|   | AUDIO SYNTHESIZER      |
 | - 2D Visibility    |   | - Dual Characters |   | - Web Audio Oscillators|
 | - Mirrors & Prisms |   | - Guard State Mch |   | - Dynamic SFX Engine   |
-+--------------------+   +-------------------+   | - Adaptive soundtrack  |
++--------------------+   +-------------------+   | - Master mute toggle   |
                                                  +------------------------+
 ```
 
@@ -81,10 +81,10 @@ The system architecture comprises a login page with an account module, and the g
 ### 3.1 Input & Event Manager
 * Captures player input events asynchronously (`keydown`, `keyup`, mouse/touch clicks). Touch, joystick and tilt input are handled by the Mobile Controls module (§3.10) and reach the engine through `engine.analogInput` and the existing action methods.
 * Normalizes direction vectors for movement (`WASD` / Arrow keys) and triggers discrete actions for soul swapping (`Tab`/`Space`), mirror rotation (`E`), tactical step undo (`Z`), level restart (`R`), next level after a win (`Enter`), pause / resume (`P` or `Esc`; `Esc` closes an open Level Select or Settings modal first), and Continue while paused (`Enter`).
-* Header buttons: ⏸️ Pause, ⚙️ Settings, ⛶ Full screen (touch mode only), 🎵 Music, 🔊 Sound, ↩️ Rewind (hidden in touch mode, replaced by UNDO), 🔄 Restart, Levels, and **Sign Out** (saves the snapshot, ends the session, fades back to the login page).
+* Header buttons: ⏸️ Pause, ⚙️ Settings, ⛶ Full screen (touch mode only), 🔊 Sound, ↩️ Rewind (hidden in touch mode, replaced by UNDO), 🔄 Restart, Levels, and **Sign Out** (saves the snapshot, ends the session, fades back to the login page).
 * `Esc` closes an open modal (Level Select or Settings) before it toggles pause. While either modal is open, gameplay keys are ignored and the update loop is frozen.
 * Discrete gameplay actions ignore key auto-repeat and are only accepted in the `PLAYING` state; held keys are cleared on window blur and on pause.
-* Page lifecycle events: `visibilitychange` (tab hidden → auto-pause and save the snapshot) and `pagehide` (save the snapshot). The first key press or pointer press starts the soundtrack (browsers block audio autoplay).
+* Page lifecycle events: `visibilitychange` (tab hidden → auto-pause and save the snapshot) and `pagehide` (save the snapshot). The first key press or pointer press resumes the `AudioContext` (browsers block audio autoplay).
 
 ### 3.2 2D Visibility Polygon & Raycasting Engine
 * **Algorithm:** For each active light source (lamps, rotating spotlights), the raycaster projects 60+ radial rays bounded by field-of-view ($FOV$) and range.
@@ -121,7 +121,7 @@ The system architecture comprises a login page with an account module, and the g
   - Prism refraction: Arpeggiated chime sequence.
   - Guard stun: Sawtooth frequency sweep.
   - Mission start: rising triangle arpeggio (D4–A4–D5) played with the intro title card; pause: short blip.
-* **Adaptive ambient soundtrack:** a continuous pad of two voicings, each with a slowly "breathing" low-pass filter (0.07 Hz LFO): a bright **Light** voicing (sine, A3–E5) and a deep **Shadow** voicing (triangle, A1–E3). On every soul swap (and level load) the pad crossfades to the controlled soul's voicing, realising the concept document's dynamic soundtrack. It starts on the first user gesture, can be toggled with 🎵 (`audioSettings.music`, saved per account), and stops on mute or Sign Out.
+* There is no background music: the game uses short event sound effects only (an earlier adaptive ambient soundtrack was removed after user feedback).
 * All output is routed through a master gain node (🔊 mute stops everything); audio calls are guarded when Web Audio is unavailable.
 * The login page has its own small UI-sound set (hover tick, click, typing ticks, tab whoosh, error buzz, success arpeggio) with a separate mute toggle.
 

@@ -12,7 +12,7 @@
 
 The **LIGHT & SHADOW** database and data storage architecture manages level map layouts, entity configurations, user progression state, high scores, and audio preferences. Given the web client architecture, data storage is divided into two primary layers:
 1. **Static Level Data Schema (JSON):** Immutable declarative structures defining level layouts, walls, optics, light sources, guards, loot, and exit coordinates. In `game.js` these live in a single `LEVELS` constant; `loadLevel()` deep-copies a level and adds runtime-only state (see §3.6).
-2. **Dynamic Client State & Storage (`localStorage` / `sessionStorage`):** Persistent client data storing player accounts and sessions, and, per account, unlocked levels, best completion times, star ratings, the last mission played, a mid-level snapshot for "continue where you left off", audio settings (mute, music), and control settings (touch controls, tilt, tilt sensitivity, left-handed layout, vibration).
+2. **Dynamic Client State & Storage (`localStorage` / `sessionStorage`):** Persistent client data storing player accounts and sessions, and, per account, unlocked levels, best completion times, star ratings, the last mission played, a mid-level snapshot for "continue where you left off", audio settings (mute, volume), and control settings (touch controls, tilt, tilt sensitivity, left-handed layout, vibration).
 
 There is no server-side database: the game is deployed as a static site, so all dynamic data lives in the player's browser and exists only on the device where it was created.
 
@@ -184,8 +184,7 @@ Player progression is cached locally using standard JSON serialization. Each sig
   },
   "audioSettings": {
     "muted": false,
-    "volume": 0.8,
-    "music": true
+    "volume": 0.8
   },
   "settings": {
     "touchControls": "auto",
@@ -205,7 +204,6 @@ Player progression is cached locally using standard JSON serialization. Each sig
 | `inProgress` | Snapshot object or `null` | Mid-level snapshot for "continue where you left off" (§4.2) |
 | `audioSettings.muted` | Boolean | 🔊 master mute |
 | `audioSettings.volume` | Float 0–1 | Master volume (default 0.8) |
-| `audioSettings.music` | Boolean (default `true`) | 🎵 ambient soundtrack on/off |
 | `settings` | Object | Control preferences from the ⚙️ Settings modal (§4.3) |
 
 #### `inProgress` Snapshot Fields
@@ -227,8 +225,8 @@ Player progression is cached locally using standard JSON serialization. Each sig
 ### 4.1 Persistence Rules
 | Rule | Behaviour |
 | :--- | :--- |
-| **Fresh profile** | `{"unlockedLevelIndex": 0, "lastLevelIndex": null, "highScores": {}, "inProgress": null, "audioSettings": {"muted": false, "volume": 0.8, "music": true}, "settings": {"touchControls": "auto", "tilt": false, "tiltSensitivity": "medium", "leftHanded": false, "vibration": true}}` — only Mission 1 is playable. Each new account starts with a fresh profile. |
-| **When written** | On every level win and fail, on every fresh level load/restart, on mute/music toggle, on every Settings change, on **Reset Progress**, and whenever the snapshot is saved (§4.2). |
+| **Fresh profile** | `{"unlockedLevelIndex": 0, "lastLevelIndex": null, "highScores": {}, "inProgress": null, "audioSettings": {"muted": false, "volume": 0.8}, "settings": {"touchControls": "auto", "tilt": false, "tiltSensitivity": "medium", "leftHanded": false, "vibration": true}}` — only Mission 1 is playable. Each new account starts with a fresh profile. |
+| **When written** | On every level win and fail, on every fresh level load/restart, on mute toggle, on every Settings change, on **Reset Progress**, and whenever the snapshot is saved (§4.2). |
 | **Score update** | `completed` is set to `true`; `bestTimeSeconds` keeps the lower of the old and new time (rounded to 0.1 s); `stars` keeps the higher of the old and new rating. |
 | **Star rating** | 1 = completed; 2 = within `parTime`; 3 = within `parTime` with zero rewinds. Campaign maximum 12. |
 | **Unlock rule** | Clearing level *i* sets `unlockedLevelIndex = max(unlockedLevelIndex, min(i + 1, lastLevelIndex))`. |

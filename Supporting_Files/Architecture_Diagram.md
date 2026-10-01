@@ -17,7 +17,7 @@ graph TD
 
     subgraph User Interface Layer
         HUD["Glassmorphic HUD (game.html / style.css)"]
-        HeaderCtrls["Header: Player Badge, Pause, Settings, Full Screen, Music, Sound, Sign Out"]
+        HeaderCtrls["Header: Player Badge, Pause, Settings, Full Screen, Sound, Sign Out"]
         SettingsModal["Settings Modal (Touch Controls, Tilt, Sensitivity, Calibrate, Left-Handed, Vibration)"]
         TouchUI["Touch Controls UI (Joystick Zone, SWAP / ROTATE / UNDO, Portrait & Landscape Layouts)"]
         Feedback["Intro Title Card, Toasts, Page Fades"]
@@ -65,7 +65,6 @@ graph TD
 
     subgraph Audio Engine
         AudioSynth["Procedural Web Audio Synthesizer"]
-        Soundtrack["Adaptive Ambient Soundtrack (Light / Shadow Crossfade)"]
     end
 
     Vercel --> LoginPage
@@ -115,8 +114,6 @@ graph TD
     GameLoop --> GuardAI
     
     GameLoop --> AudioSynth
-    AudioSynth --> Soundtrack
-    CharController -. "soul swap" .-> Soundtrack
     GameLoop --> HUD
     HUD --> CharCards
     HUD --> TimerPill

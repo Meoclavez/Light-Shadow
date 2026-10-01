@@ -679,10 +679,6 @@ canvas {
   color: var(--accent-cyan);
 }
 
-.icon-btn.off {
-  opacity: 0.45;
-}
-
 /* Page transitions (login <-> game) */
 body.page-enter {
   animation: page-fade-in 0.6s ease both;

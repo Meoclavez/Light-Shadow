@@ -4,7 +4,7 @@
 **Repository Directory:** `/home/meoclavezz/Projects/P-Game`  
 **Phase:** Phase 3 – Design & Planning  
 **Date:** August 2026  
-**Last Updated:** October 1, 2026 (end-of-level, progression & campaign UI; login screen, accounts, pause & welcome-back overlays, soundtrack and animations; responsive playfield, touch & tilt controls, Settings modal)  
+**Last Updated:** October 1, 2026 (end-of-level, progression & campaign UI; login screen, accounts, pause & welcome-back overlays, audio feedback and animations; responsive playfield, touch & tilt controls, Settings modal)  
 
 ---
 
@@ -32,7 +32,7 @@ The game is split into two pages: the **login page** (`index.html`, the entry po
 ```
 +-------------------------------------------------------------------------+
 | TOP NAVBAR: Brand Logo | Level Title | Loot | Timer | Grace |           |
-| 👤 Player | ⏸️ | ⚙️ | (⛶ touch) | 🎵 | 🔊 | ↩️ | 🔄 | Levels | Sign Out   |
+| 👤 Player | ⏸️ | ⚙️ | (⛶ touch) | 🔊 | ↩️ | 🔄 | Levels | Sign Out        |
 +-------------------------------------------------------------------------+
 | OBJECTIVE BANNER: level objective -> "Loot secured! ..." escape prompt  |
 +-------------------------------------------------------------------------+
@@ -161,7 +161,7 @@ All overlay cards pop in with a short scale/fade animation.
 
 ### 3.10 Game Header & Session Controls
 * **Player badge** (`👤 NAME`) shows who is signed in.
-* **⏸️ Pause**, **⚙️ Settings** (§3.15), **⛶ Full screen** (touch mode only), **🎵 Music** (🎶 when off, dimmed), **🔊 Sound** (🔇 when muted), **↩️ Rewind** (hidden in touch mode, where UNDO replaces it), **🔄 Restart**, **Levels**, and **Sign Out** (saves the snapshot, signs out, fades back to the login page). Below 1200 px, Levels and Sign Out become 🗺️ / 🚪 icon buttons.
+* **⏸️ Pause**, **⚙️ Settings** (§3.15), **⛶ Full screen** (touch mode only), **🔊 Sound** (🔇 when muted), **↩️ Rewind** (hidden in touch mode, where UNDO replaces it), **🔄 Restart**, **Levels**, and **Sign Out** (saves the snapshot, signs out, fades back to the login page). Below 1200 px, Levels and Sign Out become 🗺️ / 🚪 icon buttons.
 
 ### 3.11 Pause & Continue Where You Left Off
 1. `P`, `Esc` or ⏸️ pauses: the pause blip plays and the **PAUSED** overlay appears; the same keys or **Continue ➔** resume.
@@ -175,9 +175,9 @@ All overlay cards pop in with a short scale/fade animation.
 * **Page transitions:** pages fade in on load and fade out before navigating between login and game.
 * **Canvas:** the loot bobs and its glow pulses; the open exit portal shows swirling gold and violet rings; a pulsing ring marks the controlled soul; each win releases a 90-particle victory burst at the exit; trail and burst particles keep animating behind overlays.
 
-### 3.13 Soundtrack & Audio Feedback
-* An **adaptive ambient soundtrack** (Web Audio pad) starts on the first key press or click: a bright Light voicing (sine, A3–E5) and a deep Shadow voicing (triangle, A1–E3), each with a slowly breathing filter. Swapping souls crossfades to the controlled soul's voicing, so the music always tells the player who they are steering.
-* 🎵 toggles the music (saved per account); 🔊 mutes everything, including the music.
+### 3.13 Audio Feedback
+* All sound is procedural Web Audio sound effects; there is no background music.
+* 🔊 mutes all sound (saved per account).
 * Event cues: Light/Shadow steps, swap, mirror click, prism chime, guard stun, win, fail, mission start, pause blip.
 
 ### 3.14 Touch Controls

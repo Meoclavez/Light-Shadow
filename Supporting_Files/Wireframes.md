@@ -7,7 +7,7 @@
 
 +---------------------------------------------------------------------------------+
 | [LOGO] LIGHT & SHADOW | LEVEL 1: The Basics | [💎 LOOT 0/1] [⏱️ 0:12.4 / 0:25.0] |
-| [⚠️ GRACE 100%]  [👤 nightfox] [⏸️][⚙️][🎵][🔊][↩️][🔄] [Levels] [Sign Out]       |
+| [⚠️ GRACE 100%]  [👤 nightfox] [⏸️][⚙️][🔊][↩️][🔄] [Levels] [Sign Out]           |
 +---------------------------------------------------------------------------------+
 | OBJECTIVE: <level objective>  ->  after loot: "Loot secured! The exit portal..."|
 +---------------------------------------------------------------------------------+
@@ -118,9 +118,9 @@
 ```
 +---------------------------------------------------------------------------------+
 | ✨ LIGHT & SHADOW | MISSION 2: Timing & Guards | 💎 0/1 | ⏱️ 0:12.4 / 0:45.0     |
-|  [👤 nightfox] [⏸️] [⚙️] [🎵 Music] [🔊 Sound] [↩️] [🔄] [Levels] [Sign Out]       |
+|  [👤 nightfox] [⏸️] [⚙️] [🔊 Sound] [↩️] [🔄] [Levels] [Sign Out]                  |
 +---------------------------------------------------------------------------------+
-  🎵 -> 🎶 (dimmed) when music is off; 🔊 -> 🔇 when muted.
+  🔊 -> 🔇 when muted.
   ⚙️ opens Settings. ⛶ (full screen) appears only in touch mode; ↩️ is hidden there (UNDO).
   Below 1200 px: [Levels] -> [🗺️], [Sign Out] -> [🚪]; below 1100 px the sidebar is hidden.
   Sign Out: save snapshot -> end session -> fade back to the login page.
@@ -158,7 +158,7 @@
 ```
 +--------------------------------------+
 | 💎 0/1  ⏱️ 0:12.4 / 0:25.0  1: Basics |  <- header, at most 2 rows
-| [⏸️][⚙️][⛶][🎵][🔊][🔄][🗺️][🚪]      |     (badge hidden <= 480 px)
+| [⏸️][⚙️][⛶][🔊][🔄][🗺️][🚪]          |     (badge hidden <= 480 px)
 +--------------------------------------+
 | OBJECTIVE: Guide Lightwalker ...     |
 +--------------------------------------+
@@ -184,7 +184,7 @@
 
 ```
 +--------------------------------------------------------------------------+
-| 1: The Basics 💎 0/1 ⏱️ 0:12.4/0:25.0  [⏸️][⚙️][⛶][🎵][🔊][🔄][🗺️][🚪]   |  <- one row
+| 1: The Basics 💎 0/1 ⏱️ 0:12.4/0:25.0  [⏸️][⚙️][⛶][🔊][🔄][🗺️][🚪]       |  <- one row
 | Guide Lightwalker along light beams and Shadowweaver in darkn...          |  <- one line
 +-------------+--------------------------------------------+---------------+
 |             |                                            |               |

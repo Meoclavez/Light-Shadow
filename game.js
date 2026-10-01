@@ -16,69 +16,6 @@ class AudioSynthesizer {
     if (this.master) this.master.gain.value = this.volume;
   }
 
-  // Ambient soundtrack: a soft pad that crossfades between a bright Light voicing and a deep
-  // Shadow voicing depending on which soul is in control
-  startMusic(mood) {
-    if (this.music || !this.init()) return;
-    const ctx = this.ctx;
-    const out = ctx.createGain();
-    out.gain.value = 0;
-    out.connect(this.master);
-    out.gain.setTargetAtTime(0.07, ctx.currentTime, 1.5);
-
-    const makeVoice = (freqs, type, cutoff) => {
-      const gain = ctx.createGain();
-      gain.gain.value = 0;
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = cutoff;
-      filter.connect(gain);
-      gain.connect(out);
-      const nodes = freqs.map((f, i) => {
-        const osc = ctx.createOscillator();
-        osc.type = type;
-        osc.frequency.value = f;
-        osc.detune.value = (i % 2 ? 1 : -1) * 6;
-        osc.connect(filter);
-        osc.start();
-        return osc;
-      });
-      // Slow "breathing" sweep on the filter
-      const lfo = ctx.createOscillator();
-      const lfoDepth = ctx.createGain();
-      lfo.frequency.value = 0.07;
-      lfoDepth.gain.value = cutoff * 0.35;
-      lfo.connect(lfoDepth);
-      lfoDepth.connect(filter.frequency);
-      lfo.start();
-      nodes.push(lfo);
-      return { gain, nodes };
-    };
-
-    this.music = {
-      out,
-      light: makeVoice([220, 329.63, 440, 659.25], 'sine', 1800),
-      shadow: makeVoice([55, 82.41, 110, 164.81], 'triangle', 420)
-    };
-    this.setMusicMood(mood);
-  }
-
-  setMusicMood(mood) {
-    if (!this.music) return;
-    const t = this.ctx.currentTime;
-    this.music.light.gain.gain.setTargetAtTime(mood === 'LIGHT' ? 0.55 : 0.06, t, 0.6);
-    this.music.shadow.gain.gain.setTargetAtTime(mood === 'SHADOW' ? 0.9 : 0.12, t, 0.6);
-  }
-
-  stopMusic() {
-    if (!this.music) return;
-    const { out, light, shadow } = this.music;
-    const t = this.ctx.currentTime;
-    out.gain.setTargetAtTime(0, t, 0.25);
-    [...light.nodes, ...shadow.nodes].forEach((osc) => osc.stop(t + 1.5));
-    this.music = null;
-  }
-
   playLevelStart() {
     if (!this.init()) return;
     const now = this.ctx.currentTime;
@@ -425,7 +362,7 @@ class SaveManager {
       lastLevelIndex: null,
       highScores: {},
       inProgress: null,
-      audioSettings: { muted: false, volume: 0.8, music: true },
+      audioSettings: { muted: false, volume: 0.8 },
       // Control preferences (Settings modal, mobile.js)
       settings: { touchControls: 'auto', tilt: false, tiltSensitivity: 'medium', leftHanded: false, vibration: true }
     };
@@ -450,7 +387,10 @@ class SaveManager {
         if (Number.isInteger(parsed.lastLevelIndex)) data.lastLevelIndex = parsed.lastLevelIndex;
         if (parsed.highScores && typeof parsed.highScores === 'object') data.highScores = parsed.highScores;
         if (parsed.inProgress && typeof parsed.inProgress === 'object') data.inProgress = parsed.inProgress;
-        if (parsed.audioSettings) Object.assign(data.audioSettings, parsed.audioSettings);
+        if (parsed.audioSettings) {
+          Object.assign(data.audioSettings, parsed.audioSettings);
+          delete data.audioSettings.music; // ambient soundtrack was removed
+        }
         if (parsed.settings && typeof parsed.settings === 'object') Object.assign(data.settings, parsed.settings);
       }
     } catch (e) {
@@ -547,7 +487,6 @@ class LightShadowEngine {
   initEvents() {
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
-      this.ensureMusic(); // browsers only allow audio after a user gesture
       if (key === 'escape') {
         if (this.isModalOpen()) this.closeLevelSelect();
         else this.togglePause();
@@ -583,8 +522,6 @@ class LightShadowEngine {
       this.keys = {};
     });
 
-    window.addEventListener('pointerdown', () => this.ensureMusic());
-
     // Keep the "continue where you left off" snapshot fresh when the tab is hidden or closed
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) return;
@@ -605,16 +542,6 @@ class LightShadowEngine {
       this.audio.muted = !this.audio.muted;
       this.saveData.audioSettings.muted = this.audio.muted;
       SaveManager.save(this.saveData);
-      if (this.audio.muted) this.audio.stopMusic();
-      else this.ensureMusic();
-      this.updateSoundButton();
-    });
-
-    document.getElementById('btn-music').addEventListener('click', () => {
-      this.saveData.audioSettings.music = this.saveData.audioSettings.music === false;
-      SaveManager.save(this.saveData);
-      if (this.saveData.audioSettings.music) this.ensureMusic();
-      else this.audio.stopMusic();
       this.updateSoundButton();
     });
 
@@ -622,7 +549,6 @@ class LightShadowEngine {
 
     document.getElementById('btn-logout').addEventListener('click', () => {
       this.saveSnapshot();
-      this.audio.stopMusic();
       if (window.LightShadowAuth) window.LightShadowAuth.logout();
       document.body.classList.add('page-exit');
       setTimeout(() => { window.location.href = 'index.html'; }, 450);
@@ -660,16 +586,6 @@ class LightShadowEngine {
 
   updateSoundButton() {
     document.getElementById('btn-sound').textContent = this.audio.muted ? '🔇' : '🔊';
-    const musicOn = this.saveData.audioSettings.music !== false;
-    const musicBtn = document.getElementById('btn-music');
-    musicBtn.textContent = musicOn ? '🎵' : '🎶';
-    musicBtn.classList.toggle('off', !musicOn);
-  }
-
-  ensureMusic() {
-    if (this.saveData.audioSettings.music !== false && !this.audio.muted) {
-      this.audio.startMusic(this.activeCharacter);
-    }
   }
 
   // -------------------------------------------------------------
@@ -894,7 +810,6 @@ class LightShadowEngine {
     document.getElementById('grace-status').style.display = 'none';
     this.updateUI();
     this.updateTimerUI();
-    this.audio.setMusicMood(this.activeCharacter);
 
     if (!options.silent) {
       // A fresh attempt replaces any older mid-level snapshot
@@ -932,7 +847,6 @@ class LightShadowEngine {
     this.pushStateHistory();
     this.activeCharacter = this.activeCharacter === 'LIGHT' ? 'SHADOW' : 'LIGHT';
     this.audio.playSwap();
-    this.audio.setMusicMood(this.activeCharacter);
     this.haptic(15);
     this.updateUI();
   }
