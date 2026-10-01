@@ -1,0 +1,9 @@
+# Only the static game is deployed: index.html (login), game.html, *.js, *.css
+.agents
+tests
+Supporting_Files
+*.md
+*.docx
+*.pdf
+*.jpg
+*.jpeg

@@ -1,0 +1,427 @@
+/* LIGHT & SHADOW — login screen (uses the design tokens from style.css) */
+.login-body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  padding: 24px 16px;
+}
+
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.ui-sound {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+}
+
+.login-shell {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+}
+
+.login-card {
+  background: var(--panel-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--panel-border);
+  border-radius: 22px;
+  padding: 32px 30px 22px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: card-rise 0.8s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes card-rise {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.login-card.shake {
+  animation: shake 0.42s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(9px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(4px); }
+}
+
+.login-card.success {
+  animation: card-launch 0.75s ease forwards;
+}
+
+@keyframes card-launch {
+  0% { transform: none; opacity: 1; filter: none; }
+  30% { transform: scale(1.02); box-shadow: 0 0 80px rgba(255, 184, 48, 0.5), 0 0 140px rgba(157, 78, 221, 0.4); }
+  100% { transform: scale(0.9) translateY(-20px); opacity: 0; filter: blur(8px); }
+}
+
+/* Brand */
+.login-brand {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.login-logo {
+  font-size: 40px;
+  animation: logo-float 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 16px var(--light-color));
+}
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(8deg); }
+}
+
+.login-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  margin-top: 6px;
+}
+
+.t-light {
+  color: var(--light-color);
+  text-shadow: 0 0 18px var(--light-glow);
+  animation: glow-light 3s ease-in-out infinite alternate;
+}
+
+.t-shadow {
+  color: var(--shadow-color);
+  text-shadow: 0 0 18px var(--shadow-glow);
+  animation: glow-shadow 3s ease-in-out infinite alternate;
+}
+
+.t-amp {
+  color: var(--text-muted);
+}
+
+@keyframes glow-light {
+  to { text-shadow: 0 0 30px rgba(255, 184, 48, 0.7); }
+}
+
+@keyframes glow-shadow {
+  to { text-shadow: 0 0 30px rgba(157, 78, 221, 0.8); }
+}
+
+.login-tagline {
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--text-muted);
+}
+
+/* Continue panel */
+.continue-panel {
+  text-align: center;
+  padding: 16px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: rgba(0, 245, 212, 0.07);
+  border: 1px solid rgba(0, 245, 212, 0.25);
+  font-size: 14px;
+}
+
+.continue-panel strong {
+  color: var(--accent-cyan);
+}
+
+.continue-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Tabs */
+.auth-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 18px;
+}
+
+.auth-tab {
+  position: relative;
+  z-index: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+.auth-tab.active {
+  color: #0b0d14;
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--light-color), #ffd479);
+  box-shadow: 0 4px 16px var(--light-glow);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1), background 0.35s;
+}
+
+.auth-tabs.register .tab-indicator {
+  transform: translateX(100%);
+  background: linear-gradient(135deg, var(--shadow-color), #c77dff);
+  box-shadow: 0 4px 16px var(--shadow-glow);
+}
+
+.auth-tabs.register .auth-tab.active {
+  color: #fff;
+}
+
+/* Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: field-in 0.35s ease both;
+}
+
+@keyframes field-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(5, 6, 8, 0.6);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field input:focus {
+  border-color: var(--light-color);
+  box-shadow: 0 0 0 3px rgba(255, 184, 48, 0.18), 0 0 18px rgba(255, 184, 48, 0.15);
+}
+
+.auth-tabs.register ~ .auth-form .field input:focus {
+  border-color: var(--shadow-color);
+  box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.2), 0 0 18px rgba(157, 78, 221, 0.18);
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.remember input {
+  accent-color: var(--light-color);
+  width: 16px;
+  height: 16px;
+}
+
+.auth-error {
+  min-height: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-red);
+}
+
+.submit-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 13px;
+  font-size: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: sheen 3.2s ease-in-out infinite;
+}
+
+@keyframes sheen {
+  0%, 60% { left: -60%; }
+  100% { left: 130%; }
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Saved accounts */
+.accounts-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.accounts-section h2 {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.account-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.account-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  animation: field-in 0.35s ease both;
+}
+
+.account-chip:hover,
+.account-chip:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-cyan);
+  transform: translateX(3px);
+  outline: none;
+}
+
+.account-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #0b0d14;
+  background: linear-gradient(135deg, var(--light-color), var(--shadow-color));
+  flex-shrink: 0;
+}
+
+.account-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-name {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.account-meta .live {
+  color: var(--accent-cyan);
+}
+
+.account-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.account-remove:hover {
+  color: var(--accent-red);
+  background: rgba(255, 0, 85, 0.1);
+}
+
+.login-note {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 26px 18px 18px;
+  }
+
+  .login-title {
+    font-size: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card, .login-logo, .t-light, .t-shadow, .submit-btn::after, .field, .account-chip {
+    animation: none !important;
+  }
+}

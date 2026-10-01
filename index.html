@@ -3,143 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LIGHT & SHADOW — Two Souls. One Heist.</title>
-  <meta name="description" content="A top-down puzzle-stealth heist game where light and shadow are dynamic physical paths and walls.">
-  <link rel="stylesheet" href="style.css">
+  <title>LIGHT & SHADOW — Sign In</title>
+  <meta name="description" content="Sign in to LIGHT & SHADOW, a top-down puzzle-stealth heist game where light and shadow are dynamic physical paths and walls.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="login.css">
+  <script src="auth.js"></script>
 </head>
-<body>
-  <div class="app-container">
-    <!-- Header Navbar -->
-    <header class="top-bar">
-      <div class="brand">
-        <div class="logo-icon">✨</div>
-        <div class="brand-text">
-          <h1>LIGHT & SHADOW</h1>
-          <span class="subtitle">TWO SOULS. ONE HEIST.</span>
+<body class="login-body page-enter">
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <button id="btn-ui-sound" class="icon-btn ui-sound" title="Toggle sound effects">🔊</button>
+
+  <main class="login-shell">
+    <section class="login-card" id="login-card">
+      <header class="login-brand">
+        <div class="login-logo">✨</div>
+        <h1 class="login-title"><span class="t-light">LIGHT</span> <span class="t-amp">&amp;</span> <span class="t-shadow">SHADOW</span></h1>
+        <p class="login-tagline">TWO SOULS. ONE HEIST.</p>
+      </header>
+
+      <div id="continue-panel" class="continue-panel hidden">
+        <p>Signed in as <strong id="continue-name"></strong></p>
+        <div class="continue-actions">
+          <button id="btn-continue" class="btn primary">Continue Heist ➔</button>
+          <button id="btn-switch" class="btn secondary">Switch Account</button>
         </div>
       </div>
 
-      <div class="level-indicator">
-        <span class="label">MISSION</span>
-        <span id="level-title" class="val">1: The Basics</span>
+      <div id="auth-panel">
+        <div class="auth-tabs" role="tablist">
+          <button class="auth-tab active" data-mode="login" role="tab" aria-selected="true">Sign In</button>
+          <button class="auth-tab" data-mode="register" role="tab" aria-selected="false">Create Account</button>
+          <span class="tab-indicator" aria-hidden="true"></span>
+        </div>
+
+        <form id="auth-form" class="auth-form" novalidate>
+          <label class="field">
+            <span class="field-label">Username</span>
+            <input id="username" name="username" type="text" autocomplete="username" maxlength="16" spellcheck="false" placeholder="e.g. nightfox" required>
+          </label>
+          <label class="field">
+            <span class="field-label">Password</span>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••" required>
+          </label>
+          <label class="field confirm-field hidden">
+            <span class="field-label">Confirm password</span>
+            <input id="password2" name="password2" type="password" autocomplete="new-password" placeholder="••••••">
+          </label>
+          <label class="remember">
+            <input id="remember" type="checkbox" checked>
+            <span>Stay signed in on this device</span>
+          </label>
+          <p id="auth-error" class="auth-error" role="alert" aria-live="assertive"></p>
+          <button id="btn-submit" type="submit" class="btn primary submit-btn">Enter the Heist ➔</button>
+        </form>
       </div>
 
-      <div class="status-pills">
-        <div class="pill loot-pill" id="loot-status">
-          <span class="icon">💎</span>
-          <span class="text">LOOT: 0/1</span>
-        </div>
-        <div class="pill timer-pill" id="timer-status" title="Elapsed time / target time">
-          <span class="icon">⏱️</span>
-          <span class="text">0:00.0 / 0:30.0</span>
-        </div>
-        <div class="pill grace-pill" id="grace-status" style="display: none;">
-          <span class="icon">⚠️</span>
-          <span class="text">GRACE: 100%</span>
-        </div>
+      <div id="accounts-section" class="accounts-section hidden">
+        <h2>Players on this device</h2>
+        <ul id="account-list" class="account-list"></ul>
       </div>
 
-      <div class="top-controls">
-        <button id="btn-sound" class="icon-btn" title="Toggle Sound">🔊</button>
-        <button id="btn-rewind" class="icon-btn" title="Rewind Step (Z)">↩️</button>
-        <button id="btn-restart" class="icon-btn" title="Restart Level (R)">🔄</button>
-        <button id="btn-levels" class="btn secondary">Levels</button>
-      </div>
-    </header>
+      <p class="login-note">Accounts and progress are saved only in this browser. Don't reuse a real password.</p>
+    </section>
+  </main>
 
-    <!-- Mission Objective Banner -->
-    <div class="mission-banner">
-      <span class="banner-label">OBJECTIVE:</span>
-      <span id="mission-objective" class="banner-text">Guide Lightwalker along light beams and Shadowweaver in darkness to steal the loot and escape!</span>
-    </div>
-
-    <!-- Main Game Workspace -->
-    <main class="game-workspace">
-      <!-- Left Sidebar: Character & Controls -->
-      <aside class="sidebar-panel left-panel">
-        <div class="card character-card" id="card-light">
-          <div class="char-header">
-            <div class="char-avatar light-avatar">☀️</div>
-            <div class="char-info">
-              <h3>LIGHTWALKER</h3>
-              <span class="badge light-badge">LIGHT ONLY</span>
-            </div>
-          </div>
-          <p class="char-desc">Can only walk inside illuminated light paths. Shadow is an impassable void.</p>
-        </div>
-
-        <div class="card character-card" id="card-shadow">
-          <div class="char-header">
-            <div class="char-avatar shadow-avatar">🌙</div>
-            <div class="char-info">
-              <h3>SHADOWWEAVER</h3>
-              <span class="badge shadow-badge">DARK ONLY</span>
-            </div>
-          </div>
-          <p class="char-desc">Can only walk inside unlit dark areas. Light beams act as solid walls.</p>
-        </div>
-
-        <div class="card swap-card">
-          <button id="btn-swap-char" class="btn primary-accent full-width">
-            <span>SWAP SOUL</span>
-            <span class="hotkey-badge">TAB / SPACE</span>
-          </button>
-        </div>
-
-        <div class="card controls-card">
-          <h4>CONTROLS</h4>
-          <ul class="control-list">
-            <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Move Character</span></li>
-            <li><kbd>TAB</kbd> / <kbd>SPACE</kbd> <span>Swap Soul</span></li>
-            <li><kbd>E</kbd> <span>Interact / Rotate Mirror</span></li>
-            <li><kbd>Z</kbd> <span>Undo Step</span></li>
-            <li><kbd>R</kbd> <span>Reset Level</span></li>
-            <li><kbd>ENTER</kbd> <span>Next Level (after a win)</span></li>
-            <li><kbd>ESC</kbd> <span>Close Level Select</span></li>
-          </ul>
-        </div>
-      </aside>
-
-      <!-- Center Play Area Canvas -->
-      <section class="canvas-container">
-        <div class="canvas-wrapper">
-          <canvas id="gameCanvas" width="900" height="650"></canvas>
-          <div id="game-overlay" class="overlay hidden">
-            <div class="overlay-card" id="overlay-content">
-              <h2 id="overlay-title">LEVEL COMPLETE</h2>
-              <p id="overlay-msg">Both souls have secured the loot and reached the exit portal!</p>
-              <div id="overlay-stats" class="overlay-stats"></div>
-              <div class="overlay-actions">
-                <button id="btn-next-level" class="btn primary">Next Level ➔</button>
-                <button id="btn-retry-level" class="btn secondary">Try Again</button>
-                <button id="btn-overlay-levels" class="btn secondary">Levels</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- Level Selector Modal -->
-    <div id="levels-modal" class="modal hidden">
-      <div class="modal-content glass-panel">
-        <div class="modal-header">
-          <h2>SELECT HEIST MISSION</h2>
-          <button id="btn-close-modal" class="close-btn">&times;</button>
-        </div>
-        <div class="level-grid" id="level-grid"></div>
-        <div class="modal-footer">
-          <span id="total-stars" class="total-stars">★ 0 / 12</span>
-          <span class="modal-hint">Beat a mission's target time without rewinding for ★★★. Clear a mission to unlock the next.</span>
-          <button id="btn-reset-progress" class="btn secondary">Reset Progress</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="game.js"></script>
+  <script src="login.js"></script>
 </body>
 </html>

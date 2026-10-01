@@ -656,3 +656,794 @@ canvas {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* Signed-in player & extra controls */
+.player-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(0, 245, 212, 0.08);
+  border: 1px solid rgba(0, 245, 212, 0.25);
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.player-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-cyan);
+}
+
+.icon-btn.off {
+  opacity: 0.45;
+}
+
+/* Page transitions (login <-> game) */
+body.page-enter {
+  animation: page-fade-in 0.6s ease both;
+}
+
+body.page-exit {
+  animation: page-fade-out 0.45s ease both;
+}
+
+@keyframes page-fade-in {
+  from { opacity: 0; filter: blur(6px); }
+  to { opacity: 1; filter: none; }
+}
+
+@keyframes page-fade-out {
+  to { opacity: 0; filter: blur(6px); }
+}
+
+/* Mission intro title card */
+.level-intro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 5;
+}
+
+.level-intro.show {
+  animation: intro-card 2.2s ease both;
+}
+
+.intro-num {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 6px;
+  color: var(--accent-cyan);
+}
+
+.intro-title {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--light-color), var(--shadow-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.8));
+}
+
+@keyframes intro-card {
+  0% { opacity: 0; transform: scale(1.15); letter-spacing: 14px; }
+  20% { opacity: 1; transform: scale(1); letter-spacing: normal; }
+  75% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.96); }
+}
+
+/* Toast notifications */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translate(-50%, 20px);
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: rgba(18, 22, 34, 0.92);
+  border: 1px solid rgba(0, 245, 212, 0.35);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.toast.show {
+  animation: toast-life 3.6s ease both;
+}
+
+@keyframes toast-life {
+  0% { opacity: 0; transform: translate(-50%, 20px); }
+  12% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 10px); }
+}
+
+/* Overlay entrance */
+.overlay:not(.hidden) .overlay-card {
+  animation: card-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes card-pop {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.page-enter, body.page-exit, .level-intro.show, .toast.show, .overlay:not(.hidden) .overlay-card {
+    animation-duration: 0.01s;
+  }
+}
+
+/* =============================================================
+   RESPONSIVE PLAYFIELD, TOUCH CONTROLS & SETTINGS
+   ============================================================= */
+
+/* mobile.js sizes the wrapper to fit its panel; the canvas keeps its 900x650 resolution */
+.canvas-wrapper canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.touch-only {
+  display: none;
+}
+
+body.touch-ui .touch-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-only.unsupported {
+  display: none !important;
+}
+
+/* Narrow desktop windows: drop the sidebar so the playfield keeps its size */
+@media (max-width: 1100px) {
+  .sidebar-panel {
+    display: none;
+  }
+}
+
+/* Compact header for tablets & phones */
+@media (max-width: 900px) {
+  .app-container {
+    padding: 8px;
+  }
+
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+  }
+
+  .brand .subtitle,
+  .level-indicator .label,
+  .player-avatar {
+    display: none;
+  }
+
+  .logo-icon {
+    font-size: 20px;
+  }
+
+  .brand-text h1 {
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+
+  .level-indicator .val {
+    font-size: 13px;
+  }
+
+  .status-pills {
+    gap: 6px;
+  }
+
+  .pill {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .top-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+
+  .top-controls .btn {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .mission-banner {
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  /* Overlays escape the (small) canvas so their buttons stay readable and tappable */
+  .canvas-container {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .overlay {
+    position: fixed;
+    z-index: 50;
+  }
+
+  .overlay-card {
+    padding: 22px 20px;
+    max-width: 92vw;
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+
+  .overlay-card h2 {
+    font-size: 22px;
+  }
+
+  .overlay-actions {
+    flex-wrap: wrap;
+  }
+
+  .modal-content {
+    padding: 18px;
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+
+  .level-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+  }
+
+  .intro-title {
+    font-size: clamp(20px, 6vw, 40px);
+  }
+}
+
+/* ---------------------------------------------------------- touch layout */
+body.touch-ui {
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.touch-ui .app-container {
+  height: 100dvh;
+  padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+}
+
+body.touch-ui .sidebar-panel,
+body.touch-ui #btn-rewind {
+  display: none; /* the UNDO touch button replaces the header rewind */
+}
+
+body.touch-ui .game-workspace {
+  position: relative;
+  flex-direction: column;
+  gap: 8px;
+}
+
+body.touch-ui .canvas-container {
+  flex: 1;
+  min-height: 0;
+  border-radius: 12px;
+  touch-action: none;
+}
+
+.touch-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 12px;
+  height: 180px;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.touch-controls.hidden {
+  display: none;
+}
+
+body.left-handed .touch-controls {
+  flex-direction: row-reverse;
+}
+
+.joystick-zone {
+  position: relative;
+  flex: 1;
+  max-width: 260px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  touch-action: none;
+  overflow: hidden;
+}
+
+.joystick-base {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 112px;
+  height: 112px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  opacity: 0.65;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.joystick-base.active {
+  opacity: 1;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 22px rgba(0, 245, 212, 0.25);
+}
+
+.joystick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 35%, #fff, var(--accent-cyan));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 245, 212, 0.4);
+}
+
+.joystick-hint,
+.tilt-indicator {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.joystick-hint {
+  top: 8px;
+}
+
+.tilt-indicator {
+  bottom: 8px;
+  color: var(--accent-cyan);
+}
+
+.tilt-indicator.hidden {
+  display: none;
+}
+
+.touch-buttons {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+  justify-items: center;
+  padding: 4px;
+}
+
+body.left-handed .touch-buttons {
+  direction: rtl;
+}
+
+.touch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(18, 22, 34, 0.85);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.touch-btn .touch-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.touch-btn .touch-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.touch-btn.small {
+  width: 64px;
+  height: 64px;
+}
+
+.touch-btn.swap {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  width: 104px;
+  height: 104px;
+  border-color: var(--light-color);
+  background: radial-gradient(circle at 40% 35%, rgba(255, 184, 48, 0.35), rgba(18, 22, 34, 0.9));
+  box-shadow: 0 0 22px var(--light-glow);
+}
+
+.touch-btn.swap .touch-icon {
+  font-size: 34px;
+}
+
+.touch-btn.swap.shadow {
+  border-color: var(--shadow-color);
+  background: radial-gradient(circle at 40% 35%, rgba(157, 78, 221, 0.4), rgba(18, 22, 34, 0.9));
+  box-shadow: 0 0 22px var(--shadow-glow);
+}
+
+#touch-undo { grid-row: 1; grid-column: 1; }
+#touch-rotate { grid-row: 2; grid-column: 1; }
+
+.touch-btn.ready {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 18px rgba(0, 245, 212, 0.55);
+  animation: ready-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes ready-pulse {
+  to { box-shadow: 0 0 28px rgba(0, 245, 212, 0.85); }
+}
+
+.touch-btn.pressed {
+  transform: scale(0.9);
+}
+
+/* Phones held sideways: playfield takes the height, controls float over its edges */
+@media (orientation: landscape) and (max-height: 600px) {
+  body.touch-ui .top-bar {
+    flex-wrap: nowrap;
+    padding: 4px 10px;
+    margin-bottom: 4px;
+  }
+
+  body.touch-ui .brand-text,
+  body.touch-ui .level-indicator .label {
+    display: none;
+  }
+
+  body.touch-ui .top-controls .btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  body.touch-ui .icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  body.touch-ui .mission-banner {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+    padding: 3px 10px;
+  }
+
+  body.touch-ui .banner-label {
+    display: none;
+  }
+
+  body.touch-ui .touch-controls {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    pointer-events: none;
+    padding: 0 6px 6px;
+    align-items: flex-end;
+  }
+
+  body.touch-ui .joystick-zone {
+    pointer-events: auto;
+    flex: 0 0 34%;
+    max-width: none;
+    height: 72%;
+    background: none;
+    border: none;
+  }
+
+  body.touch-ui .joystick-hint {
+    display: none;
+  }
+
+  body.touch-ui .touch-buttons {
+    pointer-events: auto;
+  }
+
+  body.touch-ui .touch-btn {
+    background: rgba(18, 22, 34, 0.55);
+  }
+
+  body.touch-ui .touch-btn.small {
+    width: 54px;
+    height: 54px;
+  }
+
+  body.touch-ui .touch-btn.swap {
+    width: 84px;
+    height: 84px;
+  }
+}
+
+/* ---------------------------------------------------------- settings modal */
+.settings-content {
+  width: 560px;
+}
+
+.settings-group + .settings-group {
+  margin-top: 20px;
+}
+
+.settings-group h3 {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 8px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.setting-row.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.setting-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.setting-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.segmented {
+  display: flex;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.segmented button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.segmented button.active {
+  background: var(--accent-cyan);
+  color: #0b0d14;
+}
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 28px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.switch .slider::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.switch input:checked + .slider {
+  background: var(--accent-cyan);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+.switch input:focus-visible + .slider {
+  outline: 2px solid var(--light-color);
+  outline-offset: 2px;
+}
+
+.touch-help {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.touch-help strong {
+  color: var(--text-main);
+}
+
+@media (max-width: 520px) {
+  .setting-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* Header text buttons collapse to icons on small screens */
+.btn-icon {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .top-controls .btn .btn-icon {
+    display: inline;
+  }
+
+  .top-controls .btn .btn-text {
+    display: none;
+  }
+
+  .top-controls .btn {
+    width: 34px;
+    height: 34px;
+    padding: 0 !important;
+    justify-content: center;
+  }
+
+  .player-badge {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+}
+
+/* Portrait phones: the playfield is width-limited, so its panel only takes the height it needs
+   and the thumb controls get the rest of the screen */
+@media (orientation: portrait) {
+  body.touch-ui .canvas-container {
+    flex: 0 1 auto;
+    height: calc((100vw - 12px) * 650 / 900 + 8px);
+  }
+
+  body.touch-ui .touch-controls {
+    flex: 1;
+    height: auto;
+    min-height: 150px;
+    max-height: 280px;
+    margin-top: auto;
+  }
+
+  body.touch-ui .top-bar {
+    justify-content: center;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 480px) {
+  body.touch-ui .player-badge {
+    display: none; /* the player's name is shown on the welcome / pause screens */
+  }
+
+  body.touch-ui .top-controls {
+    gap: 5px;
+  }
+}
+
+/* Mid-size windows (small laptops, tablets): keep the header on one tidy row */
+.pill,
+.level-indicator .val,
+.brand-text h1 {
+  white-space: nowrap;
+}
+
+@media (max-width: 1200px) {
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .brand .subtitle {
+    display: none;
+  }
+
+  .top-controls .btn .btn-icon {
+    display: inline;
+  }
+
+  .top-controls .btn .btn-text {
+    display: none;
+  }
+
+  .top-controls .btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  body.touch-ui .top-controls .btn {
+    width: 30px;
+    height: 30px;
+  }
+}

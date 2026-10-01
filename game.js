@@ -16,6 +16,102 @@ class AudioSynthesizer {
     if (this.master) this.master.gain.value = this.volume;
   }
 
+  // Ambient soundtrack: a soft pad that crossfades between a bright Light voicing and a deep
+  // Shadow voicing depending on which soul is in control
+  startMusic(mood) {
+    if (this.music || !this.init()) return;
+    const ctx = this.ctx;
+    const out = ctx.createGain();
+    out.gain.value = 0;
+    out.connect(this.master);
+    out.gain.setTargetAtTime(0.07, ctx.currentTime, 1.5);
+
+    const makeVoice = (freqs, type, cutoff) => {
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = cutoff;
+      filter.connect(gain);
+      gain.connect(out);
+      const nodes = freqs.map((f, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = type;
+        osc.frequency.value = f;
+        osc.detune.value = (i % 2 ? 1 : -1) * 6;
+        osc.connect(filter);
+        osc.start();
+        return osc;
+      });
+      // Slow "breathing" sweep on the filter
+      const lfo = ctx.createOscillator();
+      const lfoDepth = ctx.createGain();
+      lfo.frequency.value = 0.07;
+      lfoDepth.gain.value = cutoff * 0.35;
+      lfo.connect(lfoDepth);
+      lfoDepth.connect(filter.frequency);
+      lfo.start();
+      nodes.push(lfo);
+      return { gain, nodes };
+    };
+
+    this.music = {
+      out,
+      light: makeVoice([220, 329.63, 440, 659.25], 'sine', 1800),
+      shadow: makeVoice([55, 82.41, 110, 164.81], 'triangle', 420)
+    };
+    this.setMusicMood(mood);
+  }
+
+  setMusicMood(mood) {
+    if (!this.music) return;
+    const t = this.ctx.currentTime;
+    this.music.light.gain.gain.setTargetAtTime(mood === 'LIGHT' ? 0.55 : 0.06, t, 0.6);
+    this.music.shadow.gain.gain.setTargetAtTime(mood === 'SHADOW' ? 0.9 : 0.12, t, 0.6);
+  }
+
+  stopMusic() {
+    if (!this.music) return;
+    const { out, light, shadow } = this.music;
+    const t = this.ctx.currentTime;
+    out.gain.setTargetAtTime(0, t, 0.25);
+    [...light.nodes, ...shadow.nodes].forEach((osc) => osc.stop(t + 1.5));
+    this.music = null;
+  }
+
+  playLevelStart() {
+    if (!this.init()) return;
+    const now = this.ctx.currentTime;
+    [293.66, 440, 587.33].forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+      gain.gain.setValueAtTime(0.0001, now + idx * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.1, now + idx * 0.12 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.6);
+      osc.connect(gain);
+      gain.connect(this.master);
+      osc.start(now + idx * 0.12);
+      osc.stop(now + idx * 0.12 + 0.6);
+    });
+  }
+
+  playPause() {
+    if (!this.init()) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(520, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(260, this.ctx.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.18);
+  }
+
   // Returns true when a sound may be played (not muted, Web Audio available)
   init() {
     if (this.muted) return false;
@@ -320,24 +416,42 @@ function formatTime(seconds) {
 }
 
 // -------------------------------------------------------------
-// SAVE DATA (localStorage, key LIGHT_SHADOW_SAVEDATA)
+// SAVE DATA (localStorage, key LIGHT_SHADOW_SAVEDATA::<username> per signed-in account)
 // -------------------------------------------------------------
 class SaveManager {
   static defaults() {
-    return { unlockedLevelIndex: 0, highScores: {}, audioSettings: { muted: false, volume: 0.8 } };
+    return {
+      unlockedLevelIndex: 0,
+      lastLevelIndex: null,
+      highScores: {},
+      inProgress: null,
+      audioSettings: { muted: false, volume: 0.8, music: true },
+      // Control preferences (Settings modal, mobile.js)
+      settings: { touchControls: 'auto', tilt: false, tiltSensitivity: 'medium', leftHanded: false, vibration: true }
+    };
+  }
+
+  // Each signed-in account (auth.js) gets its own save slot; without a session the shared slot is used
+  static key() {
+    const auth = window.LightShadowAuth;
+    const user = auth ? auth.currentUser() : null;
+    return user ? auth.saveKeyFor(user) : SAVE_KEY;
   }
 
   static load() {
     const data = SaveManager.defaults();
     try {
-      const raw = window.localStorage.getItem(SAVE_KEY);
+      const raw = window.localStorage.getItem(SaveManager.key());
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Number.isInteger(parsed.unlockedLevelIndex)) {
           data.unlockedLevelIndex = Math.max(0, Math.min(parsed.unlockedLevelIndex, LEVELS.length - 1));
         }
+        if (Number.isInteger(parsed.lastLevelIndex)) data.lastLevelIndex = parsed.lastLevelIndex;
         if (parsed.highScores && typeof parsed.highScores === 'object') data.highScores = parsed.highScores;
+        if (parsed.inProgress && typeof parsed.inProgress === 'object') data.inProgress = parsed.inProgress;
         if (parsed.audioSettings) Object.assign(data.audioSettings, parsed.audioSettings);
+        if (parsed.settings && typeof parsed.settings === 'object') Object.assign(data.settings, parsed.settings);
       }
     } catch (e) {
       // Corrupt or blocked storage: fall back to a fresh profile
@@ -347,7 +461,7 @@ class SaveManager {
 
   static save(data) {
     try {
-      window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      window.localStorage.setItem(SaveManager.key(), JSON.stringify(data));
     } catch (e) {
       // Storage unavailable (private mode / file quota): progress lasts for this session only
     }
@@ -364,6 +478,7 @@ class LightShadowEngine {
     this.audio = new AudioSynthesizer();
 
     this.saveData = SaveManager.load();
+    this.playerName = window.LightShadowAuth ? window.LightShadowAuth.currentUser() : null;
     this.audio.muted = !!this.saveData.audioSettings.muted;
     this.audio.setVolume(this.saveData.audioSettings.volume ?? 0.8);
 
@@ -381,7 +496,7 @@ class LightShadowEngine {
     this.graceTime = 0.5; // seconds
     this.grace = { LIGHT: 0.5, SHADOW: 0.5 };
 
-    this.gameState = 'PLAYING'; // 'PLAYING', 'WIN', 'FAIL', 'CAMPAIGN_COMPLETE'
+    this.gameState = 'PLAYING'; // 'PLAYING', 'PAUSED', 'WIN', 'FAIL', 'CAMPAIGN_COMPLETE'
     this.levelTime = 0;
     this.rewindsUsed = 0;
 
@@ -393,12 +508,19 @@ class LightShadowEngine {
     this.stepSoundTimer = 0;
     this.prismActiveLastFrame = false;
     this.shownTimerText = '';
+    this.animTime = 0;        // drives idle animations (portal swirl, loot bob)
+    this.snapshotTimer = 0;   // autosave interval for the mid-level snapshot
 
     this.keys = {};
+    // Analog movement vector (-1..1 per axis) fed by the touch joystick or tilt sensor (mobile.js)
+    this.analogInput = { x: 0, y: 0 };
 
     this.initEvents();
+    this.mobile = window.MobileControls ? new window.MobileControls(this) : null;
     this.updateSoundButton();
-    this.loadLevel(this.firstUnfinishedLevel());
+    const nameEl = document.getElementById('player-name');
+    if (nameEl) nameEl.textContent = this.playerName || 'Guest';
+    this.resumeProgress();
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this.gameLoop(t));
   }
@@ -425,8 +547,10 @@ class LightShadowEngine {
   initEvents() {
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
+      this.ensureMusic(); // browsers only allow audio after a user gesture
       if (key === 'escape') {
-        this.closeLevelSelect();
+        if (this.isModalOpen()) this.closeLevelSelect();
+        else this.togglePause();
         return;
       }
       if (this.isModalOpen()) return;
@@ -435,10 +559,14 @@ class LightShadowEngine {
       this.keys[key] = true;
       if (e.repeat) return;
 
-      if (key === 'r') {
+      if (key === 'p') {
+        this.togglePause();
+      } else if (key === 'r') {
         this.restartLevel();
       } else if (key === 'enter' && this.gameState === 'WIN') {
         this.nextLevel();
+      } else if (key === 'enter' && this.gameState === 'PAUSED') {
+        this.resume();
       } else if (this.gameState === 'PLAYING') {
         if (e.key === 'Tab' || e.key === ' ') this.swapCharacter();
         else if (key === 'e') this.interact();
@@ -455,6 +583,16 @@ class LightShadowEngine {
       this.keys = {};
     });
 
+    window.addEventListener('pointerdown', () => this.ensureMusic());
+
+    // Keep the "continue where you left off" snapshot fresh when the tab is hidden or closed
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) return;
+      if (this.gameState === 'PLAYING') this.pause();
+      this.saveSnapshot();
+    });
+    window.addEventListener('pagehide', () => this.saveSnapshot());
+
     document.getElementById('btn-swap-char').addEventListener('click', () => {
       if (this.gameState === 'PLAYING') this.swapCharacter();
     });
@@ -467,7 +605,27 @@ class LightShadowEngine {
       this.audio.muted = !this.audio.muted;
       this.saveData.audioSettings.muted = this.audio.muted;
       SaveManager.save(this.saveData);
+      if (this.audio.muted) this.audio.stopMusic();
+      else this.ensureMusic();
       this.updateSoundButton();
+    });
+
+    document.getElementById('btn-music').addEventListener('click', () => {
+      this.saveData.audioSettings.music = this.saveData.audioSettings.music === false;
+      SaveManager.save(this.saveData);
+      if (this.saveData.audioSettings.music) this.ensureMusic();
+      else this.audio.stopMusic();
+      this.updateSoundButton();
+    });
+
+    document.getElementById('btn-pause').addEventListener('click', () => this.togglePause());
+
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      this.saveSnapshot();
+      this.audio.stopMusic();
+      if (window.LightShadowAuth) window.LightShadowAuth.logout();
+      document.body.classList.add('page-exit');
+      setTimeout(() => { window.location.href = 'index.html'; }, 450);
     });
 
     document.getElementById('btn-levels').addEventListener('click', () => this.openLevelSelect());
@@ -475,16 +633,21 @@ class LightShadowEngine {
 
     document.getElementById('btn-reset-progress').addEventListener('click', () => {
       if (!window.confirm('Erase all saved progress, best times and stars?')) return;
-      const audioSettings = this.saveData.audioSettings;
+      // Progress is wiped; preferences (audio, controls) are kept. The settings object is reused
+      // because MobileControls holds a reference to it.
+      const { audioSettings, settings } = this.saveData;
       this.saveData = SaveManager.defaults();
       this.saveData.audioSettings = audioSettings;
+      this.saveData.settings = settings;
       SaveManager.save(this.saveData);
       this.renderLevelSelect();
       this.loadLevel(0);
     });
 
     document.getElementById('btn-next-level').addEventListener('click', () => {
-      if (this.gameState === 'CAMPAIGN_COMPLETE') {
+      if (this.gameState === 'PAUSED') {
+        this.resume();
+      } else if (this.gameState === 'CAMPAIGN_COMPLETE') {
         this.loadLevel(0);
       } else {
         this.nextLevel();
@@ -497,10 +660,146 @@ class LightShadowEngine {
 
   updateSoundButton() {
     document.getElementById('btn-sound').textContent = this.audio.muted ? '🔇' : '🔊';
+    const musicOn = this.saveData.audioSettings.music !== false;
+    const musicBtn = document.getElementById('btn-music');
+    musicBtn.textContent = musicOn ? '🎵' : '🎶';
+    musicBtn.classList.toggle('off', !musicOn);
+  }
+
+  ensureMusic() {
+    if (this.saveData.audioSettings.music !== false && !this.audio.muted) {
+      this.audio.startMusic(this.activeCharacter);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // PAUSE, RESUME & "CONTINUE WHERE YOU LEFT OFF"
+  // -------------------------------------------------------------
+  pause(title = 'PAUSED', msg = 'The heist is on hold. Press Continue, P or Esc to get back in.') {
+    if (this.gameState !== 'PLAYING') return;
+    this.gameState = 'PAUSED';
+    this.keys = {};
+    this.audio.playPause();
+    this.showOverlay(title, msg, [], 'Continue ➔');
+    this.saveSnapshot();
+  }
+
+  resume() {
+    if (this.gameState !== 'PAUSED') return;
+    this.gameState = 'PLAYING';
+    this.keys = {};
+    document.getElementById('game-overlay').classList.add('hidden');
+    this.audio.playSwap();
+  }
+
+  togglePause() {
+    if (this.gameState === 'PLAYING') this.pause();
+    else if (this.gameState === 'PAUSED') this.resume();
+  }
+
+  captureSnapshot() {
+    return {
+      levelIndex: this.currentLevelIndex,
+      levelTime: Math.round(this.levelTime * 100) / 100,
+      rewindsUsed: this.rewindsUsed,
+      activeCharacter: this.activeCharacter,
+      light: { x: this.lightChar.x, y: this.lightChar.y },
+      shadow: { x: this.shadowChar.x, y: this.shadowChar.y },
+      mirrors: this.mirrors.map((m) => m.angle),
+      crates: this.crates.map((c) => ({ x: c.x, y: c.y })),
+      gates: this.gates.map((g) => g.open),
+      guards: this.guards.map((g) => ({ x: g.x, y: g.y, dir: g.dir, angle: g.angle, stunTimer: g.stunTimer })),
+      lights: this.lightSources.map((ls) => ({ angle: ls.angle, time: ls.time })),
+      lootTaken: this.loot.taken,
+      savedAt: Date.now()
+    };
+  }
+
+  // Only an unfinished mission is worth resuming; after a win/fail the next visit starts fresh
+  saveSnapshot() {
+    const live = this.gameState === 'PLAYING' || this.gameState === 'PAUSED';
+    this.saveData.inProgress = live ? this.captureSnapshot() : null;
+    SaveManager.save(this.saveData);
+  }
+
+  restoreSnapshot(snap) {
+    const lvl = LEVELS[snap.levelIndex];
+    const sameShape = (arr, ref) => Array.isArray(arr) && arr.length === ref.length;
+    if (!lvl || !this.isLevelUnlocked(snap.levelIndex) || !snap.light || !snap.shadow ||
+        !sameShape(snap.mirrors, lvl.mirrors) || !sameShape(snap.crates, lvl.crates) ||
+        !sameShape(snap.gates, lvl.gates) || !sameShape(snap.guards, lvl.guards) ||
+        !sameShape(snap.lights, lvl.lightSources)) {
+      return false; // level data changed since the snapshot was taken
+    }
+
+    this.loadLevel(snap.levelIndex, { silent: true });
+    this.levelTime = snap.levelTime || 0;
+    this.rewindsUsed = snap.rewindsUsed || 0;
+    this.activeCharacter = snap.activeCharacter === 'SHADOW' ? 'SHADOW' : 'LIGHT';
+    Object.assign(this.lightChar, { x: snap.light.x, y: snap.light.y });
+    Object.assign(this.shadowChar, { x: snap.shadow.x, y: snap.shadow.y });
+    this.mirrors.forEach((m, i) => { m.angle = snap.mirrors[i]; });
+    this.crates.forEach((c, i) => Object.assign(c, snap.crates[i]));
+    this.gates.forEach((g, i) => { g.open = !!snap.gates[i]; });
+    this.guards.forEach((g, i) => Object.assign(g, snap.guards[i]));
+    this.lightSources.forEach((ls, i) => Object.assign(ls, snap.lights[i]));
+    this.loot.taken = !!snap.lootTaken;
+
+    this.calculateLighting();
+    this.historyStack = [];
+    this.pushStateHistory();
+    this.updateUI();
+    this.updateTimerUI();
+    return true;
+  }
+
+  resumeProgress() {
+    const name = this.playerName ? `, ${this.playerName.toUpperCase()}` : '';
+    const snap = this.saveData.inProgress;
+    if (snap && this.restoreSnapshot(snap)) {
+      this.pause(`WELCOME BACK${name}!`,
+        `Mission ${snap.levelIndex + 1} is exactly where you left it (${formatTime(this.levelTime)} on the clock). Press Continue, P or Enter when you're ready.`);
+      return;
+    }
+    const last = this.saveData.lastLevelIndex;
+    const start = Number.isInteger(last) && last >= 0 && last < LEVELS.length && this.isLevelUnlocked(last)
+      ? last
+      : this.firstUnfinishedLevel();
+    this.loadLevel(start);
+    if (this.playerName) {
+      const returning = Object.keys(this.saveData.highScores).length > 0;
+      this.showToast(returning ? `Welcome back, ${this.playerName}! Continuing from Mission ${start + 1}.` : `Welcome, ${this.playerName}! Your first heist awaits.`);
+    }
+  }
+
+  showToast(text) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = text;
+    toast.classList.remove('show');
+    void toast.offsetWidth; // restart the CSS animation
+    toast.classList.add('show');
   }
 
   isModalOpen() {
-    return !document.getElementById('levels-modal').classList.contains('hidden');
+    return ['levels-modal', 'settings-modal'].some((id) => {
+      const el = document.getElementById(id);
+      return el && !el.classList.contains('hidden');
+    });
+  }
+
+  saveSettings() {
+    SaveManager.save(this.saveData);
+  }
+
+  // Short vibration feedback on phones that support it (Settings → Vibration)
+  haptic(pattern) {
+    if (this.saveData.settings.vibration === false) return;
+    try {
+      if (window.navigator && typeof window.navigator.vibrate === 'function') window.navigator.vibrate(pattern);
+    } catch (e) {
+      // vibration blocked (no user gesture yet / unsupported)
+    }
   }
 
   openLevelSelect() {
@@ -511,6 +810,8 @@ class LightShadowEngine {
 
   closeLevelSelect() {
     document.getElementById('levels-modal').classList.add('hidden');
+    const settings = document.getElementById('settings-modal');
+    if (settings) settings.classList.add('hidden');
   }
 
   renderLevelSelect() {
@@ -552,7 +853,7 @@ class LightShadowEngine {
     document.getElementById('total-stars').textContent = `★ ${totalStars} / ${LEVELS.length * 3}`;
   }
 
-  loadLevel(index) {
+  loadLevel(index, options = {}) {
     this.currentLevelIndex = index;
     const lvl = LEVELS[index];
 
@@ -593,6 +894,27 @@ class LightShadowEngine {
     document.getElementById('grace-status').style.display = 'none';
     this.updateUI();
     this.updateTimerUI();
+    this.audio.setMusicMood(this.activeCharacter);
+
+    if (!options.silent) {
+      // A fresh attempt replaces any older mid-level snapshot
+      this.saveData.lastLevelIndex = index;
+      this.saveData.inProgress = null;
+      SaveManager.save(this.saveData);
+      this.playLevelIntro(index);
+    }
+  }
+
+  playLevelIntro(index) {
+    const intro = document.getElementById('level-intro');
+    if (intro) {
+      const [num, ...rest] = LEVELS[index].title.split(':');
+      intro.innerHTML = `<span class="intro-num">MISSION ${num.trim()}</span><span class="intro-title">${rest.join(':').trim()}</span>`;
+      intro.classList.remove('show');
+      void intro.offsetWidth; // restart the CSS animation
+      intro.classList.add('show');
+    }
+    this.audio.playLevelStart();
   }
 
   restartLevel() {
@@ -610,6 +932,8 @@ class LightShadowEngine {
     this.pushStateHistory();
     this.activeCharacter = this.activeCharacter === 'LIGHT' ? 'SHADOW' : 'LIGHT';
     this.audio.playSwap();
+    this.audio.setMusicMood(this.activeCharacter);
+    this.haptic(15);
     this.updateUI();
   }
 
@@ -675,6 +999,11 @@ class LightShadowEngine {
     }
   }
 
+  nearestMirrorInReach() {
+    const char = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
+    return this.mirrors.some((m) => Math.hypot(char.x - m.x, char.y - m.y) < 50);
+  }
+
   interact() {
     const char = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
     // Rotate the nearest mirror in reach
@@ -690,6 +1019,7 @@ class LightShadowEngine {
     if (nearest) {
       this.pushStateHistory();
       nearest.angle += Math.PI / 8; // Rotate by 22.5 deg
+      this.haptic(10);
       if (nearest.angle >= Math.PI - 1e-6) nearest.angle = 0; // a line mirror repeats every 180°
       this.audio.playInteract();
     }
@@ -703,9 +1033,12 @@ class LightShadowEngine {
     const dt = Math.max(0, Math.min((time - this.lastTime) / 1000, 0.1));
     this.lastTime = time;
 
+    this.animTime += dt;
     if (this.gameState === 'PLAYING' && !this.isModalOpen()) {
       this.update(dt);
     }
+    this.updateParticles(dt); // keep trails & victory bursts animating behind overlays
+    if (this.mobile) this.mobile.update(dt);
     this.render();
 
     requestAnimationFrame((t) => this.gameLoop(t));
@@ -723,10 +1056,7 @@ class LightShadowEngine {
     // 3. Move Active Character (with smooth wall sliding & crate pushing)
     this.handleMovement(dt);
 
-    // 4. Update Particles
-    this.updateParticles(dt);
-
-    // 5. Update Guards AI
+    // 4. Update Guards AI (particles animate in gameLoop so they also run behind overlays)
     this.updateGuards(dt);
     if (this.gameState !== 'PLAYING') return;
 
@@ -738,6 +1068,13 @@ class LightShadowEngine {
     this.checkObjectives();
 
     this.updateTimerUI();
+
+    // 8. Autosave the mid-level snapshot every couple of seconds
+    this.snapshotTimer += dt;
+    if (this.snapshotTimer > 2 && this.gameState === 'PLAYING') {
+      this.snapshotTimer = 0;
+      this.saveSnapshot();
+    }
   }
 
   updateLightSources(dt) {
@@ -759,7 +1096,15 @@ class LightShadowEngine {
     if (this.keys['a'] || this.keys['arrowleft']) dx -= 1;
     if (this.keys['d'] || this.keys['arrowright']) dx += 1;
 
-    if (dx === 0 && dy === 0) return;
+    let throttle = 1;
+    if (dx === 0 && dy === 0) {
+      // Touch joystick / tilt: analog direction, partial deflection walks slower
+      const mag = Math.hypot(this.analogInput.x, this.analogInput.y);
+      if (mag < 0.12) return;
+      dx = this.analogInput.x;
+      dy = this.analogInput.y;
+      throttle = Math.min(1, mag);
+    }
 
     const len = Math.hypot(dx, dy);
     dx /= len;
@@ -767,7 +1112,7 @@ class LightShadowEngine {
 
     const currChar = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
     const touchingCrate = this.crates.some((c) => this.circleRectOverlap(currChar.x + dx * 4, currChar.y + dy * 4, currChar.radius, c));
-    const speed = MOVE_SPEED * dt * (touchingCrate ? PUSH_SPEED_FACTOR : 1);
+    const speed = MOVE_SPEED * dt * throttle * (touchingCrate ? PUSH_SPEED_FACTOR : 1);
     const newX = currChar.x + dx * speed;
     const newY = currChar.y + dy * speed;
 
@@ -876,6 +1221,23 @@ class LightShadowEngine {
       maxLife: 0.4,
       color: type === 'LIGHT' ? '#ffb830' : '#9d4edd'
     });
+  }
+
+  spawnVictoryBurst(x, y) {
+    const colors = ['#ffb830', '#9d4edd', '#00f5d4', '#ffffff'];
+    for (let i = 0; i < 90; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const v = 60 + Math.random() * 220;
+      this.particles.push({
+        x, y,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v,
+        radius: Math.random() * 3 + 1.5,
+        life: 1.2 + Math.random() * 0.6,
+        maxLife: 1.8,
+        color: colors[i % colors.length]
+      });
+    }
   }
 
   updateParticles(dt) {
@@ -1079,6 +1441,7 @@ class LightShadowEngine {
 
     const active = this.activeCharacter;
     if (this.grace[active] < this.graceTime) {
+      if (gracePill.style.display !== 'flex') this.haptic(25); // first frame on forbidden terrain
       gracePill.style.display = 'flex';
       const pct = Math.max(0, Math.floor((this.grace[active] / this.graceTime) * 100));
       gracePill.innerHTML = `<span class="icon">⚠️</span><span class="text">GRACE: ${pct}%</span>`;
@@ -1164,6 +1527,7 @@ class LightShadowEngine {
       const dist = Math.hypot(char.x - this.loot.x, char.y - this.loot.y);
       if (dist < LOOT_RADIUS) {
         this.loot.taken = true;
+        this.haptic(40);
         this.pushStateHistory();
         this.audio.playLoot();
         this.updateUI();
@@ -1197,9 +1561,13 @@ class LightShadowEngine {
       stars: Math.max(stars, (prev && prev.stars) || 0)
     };
     this.saveData.unlockedLevelIndex = Math.max(this.saveData.unlockedLevelIndex, Math.min(index + 1, LEVELS.length - 1));
+    this.saveData.lastLevelIndex = index + 1 < LEVELS.length ? index + 1 : 0;
+    this.saveData.inProgress = null;
     SaveManager.save(this.saveData);
 
     this.audio.playWin();
+    this.haptic([30, 40, 60]);
+    this.spawnVictoryBurst(this.exit.x, this.exit.y);
     this.updateTimerUI();
 
     const isFinal = index === LEVELS.length - 1;
@@ -1241,7 +1609,10 @@ class LightShadowEngine {
   triggerGameOver(title, msg) {
     if (this.gameState !== 'PLAYING') return;
     this.gameState = 'FAIL';
+    this.saveData.inProgress = null; // a failed attempt restarts the mission next time
+    SaveManager.save(this.saveData);
     this.audio.playStun();
+    this.haptic([80, 40, 120]);
     this.showOverlay(title, msg, [], null);
   }
 
@@ -1262,7 +1633,8 @@ class LightShadowEngine {
     const nextBtn = document.getElementById('btn-next-level');
     nextBtn.style.display = nextLabel ? 'inline-flex' : 'none';
     if (nextLabel) nextBtn.textContent = nextLabel;
-    document.getElementById('btn-retry-level').textContent = this.gameState === 'FAIL' ? 'Try Again' : 'Replay Level';
+    const retryLabels = { FAIL: 'Try Again', PAUSED: 'Restart Level' };
+    document.getElementById('btn-retry-level').textContent = retryLabels[this.gameState] || 'Replay Level';
 
     document.getElementById('grace-status').style.display = 'none';
     document.getElementById('game-overlay').classList.remove('hidden');
@@ -1428,12 +1800,18 @@ class LightShadowEngine {
 
     // 11. Draw Loot
     if (!this.loot.taken) {
+      const bob = Math.sin(this.animTime * 3) * 3;
+      this.ctx.save();
+      this.ctx.shadowColor = '#00f5d4';
+      this.ctx.shadowBlur = 12 + Math.sin(this.animTime * 4) * 6;
       this.ctx.fillStyle = '#00f5d4';
       this.ctx.beginPath();
-      this.ctx.arc(this.loot.x, this.loot.y, 10, 0, Math.PI * 2);
+      this.ctx.arc(this.loot.x, this.loot.y + bob, 10, 0, Math.PI * 2);
       this.ctx.fill();
+      this.ctx.restore();
+      this.ctx.fillStyle = '#00f5d4';
       this.ctx.font = '14px Outfit';
-      this.ctx.fillText('💎 LOOT', this.loot.x - 22, this.loot.y - 15);
+      this.ctx.fillText('💎 LOOT', this.loot.x - 22, this.loot.y - 15 + bob);
     }
 
     // 12. Draw Exit Portal (sealed until the loot is secured)
@@ -1447,11 +1825,31 @@ class LightShadowEngine {
     this.ctx.fill();
     this.ctx.stroke();
     this.ctx.setLineDash([]);
+    if (exitOpen) {
+      // Swirling portal rings
+      this.ctx.save();
+      this.ctx.lineWidth = 2;
+      [0, 1, 2].forEach((i) => {
+        const start = this.animTime * (1.5 + i * 0.7) + i * 2;
+        this.ctx.strokeStyle = i === 1 ? 'rgba(157, 78, 221, 0.8)' : 'rgba(255, 184, 48, 0.8)';
+        this.ctx.beginPath();
+        this.ctx.arc(this.exit.x, this.exit.y, EXIT_RADIUS - 12 - i * 7, start, start + Math.PI * 1.2);
+        this.ctx.stroke();
+      });
+      this.ctx.restore();
+    }
     this.ctx.font = '11px Outfit';
     this.ctx.fillStyle = '#fff';
     this.ctx.fillText(exitOpen ? 'EXIT' : '🔒 EXIT', this.exit.x - (exitOpen ? 12 : 20), this.exit.y + 4);
 
-    // 13. Draw Characters
+    // 13. Draw Characters (pulsing ring marks the soul you control)
+    const active = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
+    this.ctx.strokeStyle = this.activeCharacter === 'LIGHT' ? 'rgba(255, 184, 48, 0.6)' : 'rgba(157, 78, 221, 0.7)';
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.arc(active.x, active.y, active.radius + 6 + Math.sin(this.animTime * 5) * 2, 0, Math.PI * 2);
+    this.ctx.stroke();
+
     // Lightwalker (Golden Aura)
     this.ctx.shadowColor = '#ffb830';
     this.ctx.shadowBlur = this.activeCharacter === 'LIGHT' ? 20 : 5;

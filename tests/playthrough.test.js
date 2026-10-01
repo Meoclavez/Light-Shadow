@@ -12,17 +12,21 @@ const path = require('path');
 const vm = require('vm');
 
 const GAME_JS = path.join(__dirname, '..', 'game.js');
+const AUTH_JS = path.join(__dirname, '..', 'auth.js');
+const MOBILE_JS = path.join(__dirname, '..', 'mobile.js');
 const DT = 1 / 60;
 
 // ---------------------------------------------------------------- sandbox
-function createGame(initialStorage = {}) {
+// opts.auth: load auth.js too; opts.session: { username, password } to register/sign in first;
+// opts.sessionStore: share a sessionStorage object between "page loads"
+function createGame(initialStorage = {}, opts = {}) {
   const els = {};
   const noop = () => {};
   const ctx2d = new Proxy({}, { get: (t, k) => (k in t ? t[k] : noop), set: (t, k, v) => { t[k] = v; return true; } });
   const makeEl = (id) => ({
     id, textContent: '', innerHTML: '', style: {}, children: [],
     classList: {
-      set: new Set(id === 'game-overlay' || id === 'levels-modal' ? ['hidden'] : []),
+      set: new Set(['game-overlay', 'levels-modal', 'settings-modal'].includes(id) ? ['hidden'] : []),
       add(c) { this.set.add(c); }, remove(c) { this.set.delete(c); }, contains(c) { return this.set.has(c); },
       toggle(c, force) { ((force === undefined) ? !this.set.has(c) : force) ? this.set.add(c) : this.set.delete(c); },
     },
@@ -43,22 +47,41 @@ function createGame(initialStorage = {}) {
     },
     createElement: (tag) => makeEl(tag),
     querySelectorAll: () => [],
+    addEventListener: () => {},
+    hidden: false,
   };
-  const store = { ...initialStorage };
+  const store = initialStorage; // shared object = same browser profile across "page loads"
   const localStorage = {
     getItem: (k) => (k in store ? store[k] : null),
     setItem: (k, v) => { store[k] = String(v); },
     removeItem: (k) => { delete store[k]; },
   };
+  const sessionStore = opts.sessionStore || {};
+  const sessionStorage = {
+    getItem: (k) => (k in sessionStore ? sessionStore[k] : null),
+    setItem: (k, v) => { sessionStore[k] = String(v); },
+    removeItem: (k) => { delete sessionStore[k]; },
+  };
   const windowListeners = {};
+  const win = { localStorage, sessionStorage, confirm: () => true, addEventListener: (ev, fn) => { windowListeners[ev] = fn; } };
   const sandbox = {
-    document, console, Math, JSON, Number, String, Set, Object, Array, Proxy,
+    document, console, Math, JSON, Number, String, Set, Object, Array, Proxy, Uint8Array, Date,
     performance: { now: () => 0 },
     requestAnimationFrame: () => 0,
     localStorage,
-    window: { localStorage, confirm: () => true, addEventListener: (ev, fn) => { windowListeners[ev] = fn; } },
+    sessionStorage,
+    window: win,
   };
   vm.createContext(sandbox);
+  if (opts.auth || opts.session) {
+    vm.runInContext(fs.readFileSync(AUTH_JS, 'utf8'), sandbox);
+    win.LightShadowAuth = sandbox.window.LightShadowAuth;
+    if (opts.session) {
+      const { username, password } = opts.session;
+      const res = win.LightShadowAuth.login(username, password, false);
+      if (!res.ok) win.LightShadowAuth.register(username, password, false);
+    }
+  }
   vm.runInContext(fs.readFileSync(GAME_JS, 'utf8') + '\nthis.__Engine = LightShadowEngine;', sandbox);
   windowListeners.load(); // the page's own bootstrap: constructs the engine once
   const engine = new sandbox.__Engine(); // a handle we can drive (shares the same storage)
@@ -66,7 +89,7 @@ function createGame(initialStorage = {}) {
   Object.getOwnPropertyNames(Object.getPrototypeOf(engine.audio))
     .filter((k) => k.startsWith('play'))
     .forEach((k) => { engine.audio[k] = noop; });
-  return { engine, els, store, press: (key) => windowListeners.keydown({ key, repeat: false, preventDefault: noop }) };
+  return { engine, els, store, sessionStore, auth: win.LightShadowAuth, press: (key) => windowListeners.keydown({ key, repeat: false, preventDefault: noop }) };
 }
 
 // ---------------------------------------------------------------- bot
@@ -245,6 +268,140 @@ test('rewinding costs the third star; corrupt save data falls back to a fresh pr
   const saved = createGame({ LIGHT_SHADOW_SAVEDATA: JSON.stringify({ unlockedLevelIndex: 2, highScores: { level_0: { completed: true, bestTimeSeconds: 9, stars: 3 }, level_1: { completed: true, bestTimeSeconds: 20, stars: 2 } }, audioSettings: { muted: true, volume: 0.5 } }) });
   assert(saved.engine.currentLevelIndex === 2, 'should resume at the first unfinished mission');
   assert(saved.engine.audio.muted === true, 'mute setting not restored');
+});
+
+
+test('accounts: register, duplicate names, wrong password, hashed storage, remove', () => {
+  const { auth, store } = createGame({}, { auth: true });
+  assert(auth.register('nightfox', 'secret1', false).ok, 'register failed');
+  assert(!auth.register('NightFox', 'other', false).ok, 'duplicate username (case-insensitive) accepted');
+  assert(!auth.register('a', 'secret1', false).ok, 'too-short username accepted');
+  assert(!auth.register('valid_name', '12', false).ok, 'too-short password accepted');
+  assert(auth.currentUser() === 'nightfox', 'not signed in after register');
+  auth.logout();
+  assert(auth.currentUser() === null, 'still signed in after logout');
+  assert(!auth.login('nightfox', 'wrong', false).ok, 'wrong password accepted');
+  assert(auth.login('NIGHTFOX', 'secret1', false).ok, 'correct login (case-insensitive name) rejected');
+  assert(!store.LIGHT_SHADOW_ACCOUNTS.includes('secret1'), 'password stored in plain text');
+  assert(auth.register('sunbeam', 'pass1234', true).ok, 'second account failed');
+  assert(auth.listAccounts().length === 2, 'expected two accounts');
+  assert(!auth.removeAccount('sunbeam', 'nope').ok, 'removed account with wrong password');
+  assert(auth.removeAccount('sunbeam', 'pass1234').ok && auth.listAccounts().length === 1, 'remove failed');
+});
+
+test('accounts: each player keeps separate progress on the same device', () => {
+  const store = {};
+  const a = createGame(store, { session: { username: 'alpha', password: 'pw-alpha' } });
+  const solved = makeBot(a.engine, a.els)(SOLUTIONS[0]);
+  assert(solved === 'WIN', 'alpha could not clear mission 1');
+  const b = createGame(store, { session: { username: 'bravo', password: 'pw-bravo' } });
+  assert(b.engine.saveData.unlockedLevelIndex === 0 && !b.engine.levelRecord(0).completed, 'bravo sees alpha\'s progress');
+  assert(b.els['player-name'].textContent === 'bravo', 'player badge not set');
+  const a2 = createGame(store, { session: { username: 'alpha', password: 'pw-alpha' } });
+  assert(a2.engine.levelRecord(0).completed && a2.engine.currentLevelIndex === 1, 'alpha did not continue at mission 2');
+  assert(store['LIGHT_SHADOW_SAVEDATA::alpha'] && store['LIGHT_SHADOW_SAVEDATA::bravo'], 'per-account save keys missing');
+});
+
+test('continue where you left off: mid-level snapshot restores the exact situation, paused', () => {
+  const store = {};
+  const first = createGame(store, { session: { username: 'resumer', password: 'pw1234' } });
+  const bot = makeBot(first.engine, first.els);
+  // Mission 1 half done: loot stolen, Light parked at the exit, Shadow on its way
+  bot([['as', 'LIGHT'], ['go', 560, 160], ['go', 790, 300], ['as', 'SHADOW'], ['go', 300, 380]]);
+  const before = first.engine.captureSnapshot();
+  first.engine.saveSnapshot(); // what pagehide / autosave does
+
+  const second = createGame(store, { session: { username: 'resumer', password: 'pw1234' } });
+  const e = second.engine;
+  assert(e.gameState === 'PAUSED', `expected a paused welcome-back screen, got ${e.gameState}`);
+  assert(/WELCOME BACK/.test(second.els['overlay-title'].textContent), 'welcome-back overlay missing');
+  assert(e.currentLevelIndex === 0 && e.loot.taken && e.activeCharacter === 'SHADOW', 'level/loot/active soul not restored');
+  assert(Math.abs(e.shadowChar.x - before.shadow.x) < 0.01 && Math.abs(e.lightChar.y - before.light.y) < 0.01, 'positions not restored');
+  assert(Math.abs(e.levelTime - before.levelTime) < 0.01, 'timer not restored');
+  second.els['btn-next-level'].click(); // Continue
+  assert(e.gameState === 'PLAYING', 'Continue did not resume');
+  const state = makeBot(e, second.els)([['go', 760, 380], ['go', 790, 350]]);
+  assert(state === 'WIN', `resumed run did not finish the mission (${state})`);
+  assert(e.saveData.inProgress === null, 'snapshot not cleared after the win');
+});
+
+test('a failed attempt is not resumed: the mission restarts fresh', () => {
+  const store = {};
+  const first = createGame(store, { session: { username: 'unlucky', password: 'pw1234' } });
+  first.engine.loadLevel(0);
+  first.engine.lightChar.x = 110; first.engine.lightChar.y = 260; // into the dark
+  for (let t = 0; t < 1 && first.engine.gameState === 'PLAYING'; t += DT) first.engine.update(DT);
+  assert(first.engine.gameState === 'FAIL', 'setup did not fail');
+  first.engine.saveSnapshot();
+  const second = createGame(store, { session: { username: 'unlucky', password: 'pw1234' } });
+  assert(second.engine.gameState === 'PLAYING' && second.engine.lightChar.x === 110 && second.engine.lightChar.y === 150, 'failed run was resumed instead of restarted');
+});
+
+test('touch/tilt analog input moves the active soul, partial deflection walks slower', () => {
+  const { engine } = createGame();
+  engine.loadLevel(0);
+  const start = engine.lightChar.x;
+  engine.analogInput = { x: 1, y: 0 };
+  for (let t = 0; t < 0.5; t += DT) engine.update(DT);
+  const full = engine.lightChar.x - start;
+  engine.loadLevel(0);
+  engine.analogInput = { x: 0.5, y: 0 };
+  for (let t = 0; t < 0.5; t += DT) engine.update(DT);
+  const half = engine.lightChar.x - start;
+  assert(full > 75 && full < 90, `full stick should move ~85 px in 0.5 s, moved ${full.toFixed(1)}`);
+  assert(Math.abs(half - full / 2) < 3, `half stick should move half as far (${half.toFixed(1)} vs ${full.toFixed(1)})`);
+  engine.loadLevel(0);
+  engine.analogInput = { x: 0.08, y: 0.05 }; // inside the dead zone
+  for (let t = 0; t < 0.5; t += DT) engine.update(DT);
+  assert(engine.lightChar.x === start, 'dead zone ignored');
+  engine.analogInput = { x: 1, y: 0 };
+  engine.keys.a = true; // keyboard wins over the stick
+  engine.update(DT);
+  assert(engine.lightChar.x < start, 'keyboard should override analog input');
+});
+
+test('tilt mapping follows screen orientation and calibration', () => {
+  const sandbox = { window: {}, navigator: {}, Math, Object };
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(MOBILE_JS, 'utf8'), sandbox);
+  const { mapTilt, tiltVector, TILT_FULL_DEG } = sandbox.window.MobileControlsUtil;
+  const dir = (beta, gamma, angle) => {
+    const neutral = mapTilt(40, 0, angle); // typical holding pose
+    const v = tiltVector(mapTilt(beta, gamma, angle), neutral, TILT_FULL_DEG.medium);
+    return `${Math.sign(Math.round(v.x * 10))},${Math.sign(Math.round(v.y * 10))}`;
+  };
+  // Portrait: right edge down -> right; top edge away (beta down) -> up
+  assert(dir(40, 15, 0) === '1,0' && dir(25, 0, 0) === '0,-1' && dir(55, 0, 0) === '0,1', 'portrait mapping wrong');
+  // Landscape (top of phone to the left): screen-right edge is the device bottom
+  assert(dir(55, 0, 90) === '1,0' && dir(40, -15, 90) === '0,1', 'landscape-90 mapping wrong');
+  // Landscape (top of phone to the right)
+  assert(dir(25, 0, 270) === '1,0' && dir(40, 15, 270) === '0,1', 'landscape-270 mapping wrong');
+  const still = tiltVector({ x: 1.5, y: -2 }, { x: 0, y: 0 }, 18);
+  assert(still.x === 0 && still.y === 0, 'dead zone should ignore hand tremor');
+  const max = tiltVector({ x: 60, y: 60 }, { x: 0, y: 0 }, 18);
+  assert(Math.abs(Math.hypot(max.x, max.y) - 1) < 1e-9, 'diagonal tilt must be capped at full speed');
+});
+
+test('control settings persist per account', () => {
+  const store = {};
+  const a = createGame(store, { session: { username: 'tilter', password: 'pw1234' } });
+  Object.assign(a.engine.saveData.settings, { tilt: true, tiltSensitivity: 'high', leftHanded: true });
+  a.engine.saveSettings();
+  const b = createGame(store, { session: { username: 'tilter', password: 'pw1234' } });
+  const s = b.engine.saveData.settings;
+  assert(s.tilt === true && s.tiltSensitivity === 'high' && s.leftHanded === true && s.touchControls === 'auto' && s.vibration === true, `settings not restored: ${JSON.stringify(s)}`);
+});
+
+test('Reset Progress wipes progress but keeps audio & control settings (same live object)', () => {
+  const { engine, els } = createGame({}, { session: { username: 'resetter', password: 'pw1234' } });
+  makeBot(engine, els)(SOLUTIONS[0]);
+  const settingsRef = engine.saveData.settings;
+  settingsRef.tiltSensitivity = 'high';
+  engine.saveData.audioSettings.muted = true;
+  els['btn-reset-progress'].click();
+  assert(engine.saveData.unlockedLevelIndex === 0 && !engine.levelRecord(0).completed, 'progress not wiped');
+  assert(engine.saveData.settings === settingsRef && settingsRef.tiltSensitivity === 'high', 'control settings lost or detached');
+  assert(engine.saveData.audioSettings.muted === true, 'audio settings lost');
 });
 
 let failed = 0;
