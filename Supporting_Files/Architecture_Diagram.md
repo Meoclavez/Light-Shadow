@@ -17,28 +17,36 @@ graph TD
 
     subgraph User Interface Layer
         HUD["Glassmorphic HUD (game.html / style.css)"]
-        HeaderCtrls["Header: Player Badge, Pause, Settings, Full Screen, Sound, Sign Out"]
-        SettingsModal["Settings Modal (Touch Controls, Tilt, Sensitivity, Calibrate, Left-Handed, Vibration)"]
+        HeaderCtrls["Header: Player Badge, Briefing 📜, Trophies 🏆, Workshop 🛠️, Pause, Settings, Full Screen, Sound, Sign Out"]
+        SettingsModal["Settings Modal (Touch Controls, Joystick Type, Tilt, Sensitivity, Calibrate, Left-Handed, Vibration)"]
+        BriefingModal["Mission Briefing Modal (Sol & Umbra Dialogue, Security Intel)"]
+        AchievementsModal["Achievements Modal (10 Trophies, Progress Bar)"]
+        EditorModal["Custom Heist Workshop (Blueprint Canvas, Tool Palette, JSON Export/Import, Playtest)"]
         TouchUI["Touch Controls UI (Joystick Zone, SWAP / ROTATE / UNDO, Portrait & Landscape Layouts)"]
         Feedback["Intro Title Card, Toasts, Page Fades"]
         CharCards["Character HUD Cards (Lightwalker & Shadowweaver)"]
-        LevelModal["Level Selector Modal (Locks, Stars, Best Times, Reset Progress)"]
+        LevelModal["Level Selector Modal (6 Missions, Locks, Stars, Best Times, Reset Progress)"]
         Overlay["Pause / Welcome Back / Victory / Defeat / Campaign Complete Overlay"]
-        TimerPill["HUD Timer Pill (Elapsed / Target) & Objective Banner"]
+        TimerPill["HUD Status Pills: Loot, Bonus Diamonds ✨, Timer (Elapsed/Target) & Objective Banner"]
     end
 
     subgraph Input & Controllers
-        InputMgr["Input & Event Manager (WASD, Tab, Space, E, Z, R, Enter, P, Esc, Tab Hidden)"]
+        InputMgr["Input & Event Manager (WASD, Tab, Space, E, Z, R, I, Enter, P, Esc, Tab Hidden)"]
         GameLoop["Game Loop Controller (requestAnimationFrame)"]
         Progression["Progression / Campaign Controller (PLAYING, PAUSED, WIN, FAIL, CAMPAIGN_COMPLETE)"]
+        AchievementsEngine["Achievements Engine (Evaluation, Unlocks & Toast Feedback)"]
+        EditorEngine["Level Editor Controller (Canvas Snapping, Geometry Drag, Serialization)"]
     end
 
     subgraph Core Physics & Optics Engine
         Raycaster["2D Visibility Polygon Raycaster"]
+        StaticCache["Static Wall Segment Cache (Pre-baked Optimization)"]
         Mirrors["Rotatable Mirror Reflection Solver"]
         Prisms["Prism RGB Spectrum Refraction Solver"]
         Crates["Dynamic Shadow-Casting Crates Solver"]
         Receptors["Colour Receptor & Gate Latch"]
+        PressurePlates["Pressure Plate Floor Switches Solver"]
+        BonusDiamonds["Bonus Data Diamonds Collector"]
     end
 
     subgraph Entity & AI Subsystem

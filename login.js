@@ -327,6 +327,14 @@
     $('btn-continue').disabled = true;
     enterGame();
   });
+  const guestBtn = $('btn-guest');
+  if (guestBtn) {
+    guestBtn.addEventListener('click', () => {
+      Auth.loginAsGuest();
+      guestBtn.disabled = true;
+      enterGame();
+    });
+  }
   $('btn-switch').addEventListener('click', () => {
     Sfx.click();
     Auth.logout();

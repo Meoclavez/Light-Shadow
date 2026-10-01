@@ -112,26 +112,37 @@ All control settings are saved per account (see **Save Data**).
 
 The exit portal is drawn **sealed** (grey, dashed, `🔒 EXIT`) until the loot is taken, then turns **green**. The portal is *twilight*: neutral ground where neither soul's terrain rule applies, so both souls can stand in it safely. The objective banner updates once the loot is secured.
 
-### Target Times & Star Rating
-| Mission | Target (par) time |
-| :--- | :--- |
-| 1. The Basics | 25 s |
-| 2. Timing & Guards | 45 s |
-| 3. Mirrors & Shadow Bridges | 45 s |
-| 4. Prism Spectrum Heist | 60 s |
+| Mission | Target (par) time | Key Mechanics Introduced |
+| :--- | :--- | :--- |
+| 1. The Basics | 25 s | Lightwalker & Shadowweaver fundamental terrain constraints |
+| 2. Timing & Guards | 45 s | Moving Lumen patrol guards, line of sight, stealth timing |
+| 3. Mirrors & Shadow Bridges | 45 s | Rotatable mirrors (22.5° steps), pushable crate shadow bridges |
+| 4. Prism Spectrum Heist | 60 s | Refractive prisms (RGB splitting), color-receptor security gates |
+| 5. Pressure & Precision | 60 s | Weight-sensitive pressure plates, synchronized dual-soul routing |
+| 6. The Vault Matrix | 80 s | Climax heist combining sweeping spotlights, mirrors, Nyx guards, pressure plates & laser barriers |
 
 The HUD timer pill shows `elapsed / target` and turns amber once you are over the target.
 * ★ = mission completed
 * ★★ = completed within the target time
 * ★★★ = within the target time with **zero rewinds** (`Z`) used
 
-The campaign maximum is **12 stars**.
+The campaign maximum is **18 stars**.
+
+### Collectibles: Bonus Data Diamonds
+Each infiltration contains hidden, secondary Data Diamonds (`✨ BONUS: X/N`). Collecting all bonus diamonds in a mission tests mastery of stealth routing and awards the coveted `diamond_heist` trophy.
+
+### Interactive Features & Tools
+* **📜 Noir Story Briefings:** Before and during any mission, access interactive tactical dialogues between Sol (Lightwalker) and Umbra (Shadowweaver) alongside blueprint security intelligence (`btn-briefing` / `I` key).
+* **🏆 Heist Trophies & Achievements:** 10 tracked trophies (First Steps, Speed Demon, Ghost, Prism Master, Heist Architect, etc.) with real-time celebratory HUD toasts, completion percentage bar, and timestamp persistence.
+* **🛠️ Custom Heist Workshop (Level Editor):** Comprehensive in-browser blueprint level designer. Drag-to-build walls & gates, place spotlights, omni-lamps, mirrors, prisms, pressure plates, crates, patrol guards, data diamonds, and player spawns. Includes instant playtesting, JSON export to clipboard, and JSON import.
+* **⚡ Quick Play as Guest:** Instant access on `index.html` allowing frictionless one-click playthrough without creating a named account.
+* **🕹️ Flexible Mobile Joystick:** Toggle between dynamic floating thumb follower and classic fixed anchor in Settings.
 
 ### Unlocking & Campaign End
 * A fresh profile starts with only Mission 1 unlocked; clearing a mission unlocks the next.
 * The Level Select modal shows each mission's lock state (🔒), stars, best time and target time, the campaign star total, and a **Reset Progress** button (with confirmation).
 * On page load the game resumes where you left off (see **Accounts & Continue Where You Left Off** below).
-* Winning Mission 4 ends the campaign with a **HEIST COMPLETE!** screen showing the heist total (sum of best times) and campaign stars, with **Play Again ⟲** (restarts at Mission 1), **Replay Level** and **Levels** buttons.
+* Winning Mission 6 ends the campaign with a **HEIST COMPLETE!** screen showing the heist total (sum of best times) and campaign stars, with **Play Again ⟲** (restarts at Mission 1), **Replay Level** and **Levels** buttons.
 
 ### Save Data
 Progress (unlocked missions, best times, stars, last mission, mid-level snapshot), audio settings (mute, volume) and control settings (touch controls, tilt, tilt sensitivity, left-handed layout, vibration) are stored in the browser's `localStorage` under a per-account key `LIGHT_SHADOW_SAVEDATA::<lowercase username>`. (The shared key `LIGHT_SHADOW_SAVEDATA` is only used when no account/session exists, e.g. in the headless tests.) Corrupt or blocked storage falls back to a fresh profile. See `07_Database_Design_Document.md` §4–§5 for the schemas.

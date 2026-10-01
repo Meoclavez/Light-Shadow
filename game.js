@@ -188,6 +188,70 @@ class AudioSynthesizer {
       osc.stop(now + idx * 0.1 + 0.4);
     });
   }
+
+  playPlateDown() {
+    if (!this.init()) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.08);
+  }
+
+  playPlateUp() {
+    if (!this.init()) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(240, this.ctx.currentTime + 0.06);
+    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+    osc.connect(gain);
+    gain.connect(this.master);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.06);
+  }
+
+  playBonusLoot() {
+    if (!this.init()) return;
+    const now = this.ctx.currentTime;
+    [880, 1174.66, 1318.51, 1760].forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+      gain.gain.setValueAtTime(0.1, now + idx * 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.35);
+      osc.connect(gain);
+      gain.connect(this.master);
+      osc.start(now + idx * 0.04);
+      osc.stop(now + idx * 0.04 + 0.35);
+    });
+  }
+
+  playAchievement() {
+    if (!this.init()) return;
+    const now = this.ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+      gain.gain.setValueAtTime(0.15, now + idx * 0.07);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.5);
+      osc.connect(gain);
+      gain.connect(this.master);
+      osc.start(now + idx * 0.07);
+      osc.stop(now + idx * 0.07 + 0.5);
+    });
+  }
 }
 
 // -------------------------------------------------------------
@@ -204,6 +268,58 @@ const PUSH_SPEED_FACTOR = 0.6;
 // spins a source; optional `sweep: { amplitude, speed }` swings it like a pendulum.
 // Mirrors reflect a cone of `spread` radians (default 0.25); prisms split white light into
 // R/G/B laser bands. Gates open (and stay open) once a band of `reqColor` covers their `receptor`.
+const MISSION_BRIEFINGS = [
+  {
+    level: 0,
+    sol: "First sector ahead. Keep to the spotlight beams, Umbra. Outside the beam, you're on your own.",
+    umbra: "And you keep out of the dark, Sol. One slip and the void swallows your shine. Let's grab the data core.",
+    intel: "Objective: Lightwalker moves in light; Shadowweaver moves in darkness. Grab the loot and enter the twilight portal together."
+  },
+  {
+    level: 1,
+    sol: "Security patrols detected. A Lumen Guard is sweeping the illuminated upper corridor.",
+    umbra: "And they've deployed a Nyx Guard below. Night-vision optics. He can spot me even in pitch black. We need to time our dashes.",
+    intel: "Objective: Lumen Guards hunt Lightwalker in light; Nyx Guards hunt Shadowweaver in darkness. Use swinging spotlight cycles to slip through undetected."
+  },
+  {
+    level: 2,
+    sol: "High walls blocking our line of sight. But there's an optical mirror on that pedestal.",
+    umbra: "Turn the mirror to redirect the light beam down the shaft. Then push that security crate into the beam—it will cast a shadow bridge for me to cross.",
+    intel: "Objective: Press [E] near mirrors to rotate them. Push crates into light beams to cast dynamic shadow bridges for Shadowweaver."
+  },
+  {
+    level: 3,
+    sol: "Spectrometry security gates ahead. Pure white light won't trigger the sensors.",
+    umbra: "That prism block in the center will refract your beam into Red, Green, and Blue laser bands. Direct the red frequency into the receptor to crack the vault.",
+    intel: "Objective: Direct light into the crystal prism to split it into RGB spectrum laser bands. Color receptors unlock matching security doors."
+  },
+  {
+    level: 4,
+    sol: "Heavy dual-lock pressure plates in this vault wing. Stepping on one lowers the security barrier.",
+    umbra: "I'll navigate the lower gallery once you hold the plate down. Then I can push a crate onto the secondary trigger to keep your path clear.",
+    intel: "Objective: Pressure plates respond to the weight of either soul or pushed crates. Hold plates down to lower security gates."
+  },
+  {
+    level: 5,
+    sol: "This is it—the Central Vault Matrix. Moving spotlights, prism splitters, guards, and pressure barriers all operating at once.",
+    umbra: "The ultimate heist. We synchronize our every step. Two souls, one perfect heist. Let's make history.",
+    intel: "Objective: Coordinate every skill learned: optics reflection, prism refraction, crate manipulation, pressure switches, and stealth evasion."
+  }
+];
+
+const ACHIEVEMENTS_DEF = [
+  { id: 'first_steps', title: 'First Footsteps', icon: '👟', desc: 'Successfully complete Mission 1: The Basics.' },
+  { id: 'ghost', title: 'Ghost in the Dark', icon: '👻', desc: 'Beat any mission without getting spotted by a guard.' },
+  { id: 'speed_demon', title: 'Speed Demon', icon: '⚡', desc: 'Beat any mission under the Par Time.' },
+  { id: 'no_regrets', title: 'Flawless Infiltration', icon: '🎯', desc: 'Complete a mission without using Undo / Rewind.' },
+  { id: 'prism_master', title: 'Chromatic Alchemist', icon: '🌈', desc: 'Refract white light through a prism into RGB spectrum beams.' },
+  { id: 'shadow_bridge', title: 'Shadow Architect', icon: '📦', desc: 'Push a crate to cast a shadow bridge or trigger a plate.' },
+  { id: 'pressure_point', title: 'Under Pressure', icon: '🔘', desc: 'Trigger a pressure plate to lower a security gate.' },
+  { id: 'diamond_heist', title: 'Diamond Collector', icon: '✨', desc: 'Collect all 3 bonus data diamonds in any mission.' },
+  { id: 'master_thief', title: 'Master of Shadows', icon: '👑', desc: 'Complete all 6 campaign missions.' },
+  { id: 'custom_architect', title: 'Heist Architect', icon: '🛠️', desc: 'Build and playtest a custom level in the Level Editor.' }
+];
+
 const LEVELS = [
   // LEVEL 1: THE BASICS
   {
@@ -225,6 +341,12 @@ const LEVELS = [
     gates: [],
     crates: [],
     guards: [],
+    pressurePlates: [],
+    bonusDiamonds: [
+      { id: 'd1_1', x: 260, y: 150 },
+      { id: 'd1_2', x: 200, y: 540 },
+      { id: 'd1_3', x: 680, y: 460 }
+    ],
     loot: { x: 560, y: 160 },
     exit: { x: 800, y: 330 }
   },
@@ -252,6 +374,12 @@ const LEVELS = [
     guards: [
       { type: 'LUMEN', x: 380, y: 40, patrol: [{ x: 380, y: 40 }, { x: 380, y: 190 }], speed: 1.2 },
       { type: 'NYX', x: 760, y: 340, patrol: [{ x: 760, y: 340 }, { x: 760, y: 620 }], speed: 1.3 }
+    ],
+    pressurePlates: [],
+    bonusDiamonds: [
+      { id: 'd2_1', x: 180, y: 80 },
+      { id: 'd2_2', x: 460, y: 550 },
+      { id: 'd2_3', x: 760, y: 110 }
     ],
     loot: { x: 600, y: 110 },
     exit: { x: 810, y: 270 }
@@ -282,6 +410,12 @@ const LEVELS = [
     ],
     guards: [
       { type: 'NYX', x: 380, y: 250, patrol: [{ x: 380, y: 250 }, { x: 380, y: 630 }], speed: 1.2 }
+    ],
+    pressurePlates: [],
+    bonusDiamonds: [
+      { id: 'd3_1', x: 420, y: 90 },
+      { id: 'd3_2', x: 200, y: 540 },
+      { id: 'd3_3', x: 700, y: 520 }
     ],
     loot: { x: 700, y: 300 },
     exit: { x: 830, y: 590 }
@@ -318,8 +452,110 @@ const LEVELS = [
       { type: 'LUMEN', x: 720, y: 150, patrol: [{ x: 720, y: 150 }, { x: 720, y: 600 }], speed: 1.2 },
       { type: 'NYX', x: 450, y: 620, patrol: [{ x: 450, y: 620 }, { x: 450, y: 450 }], speed: 1.0 }
     ],
+    pressurePlates: [],
+    bonusDiamonds: [
+      { id: 'd4_1', x: 120, y: 220 },
+      { id: 'd4_2', x: 440, y: 100 },
+      { id: 'd4_3', x: 720, y: 320 }
+    ],
     loot: { x: 800, y: 600 },
     exit: { x: 850, y: 425 }
+  },
+  // LEVEL 5: PRESSURE & PRECISION
+  {
+    title: '5: Pressure & Precision',
+    desc: 'Cooperate with pressure plates to lower impenetrable security gates.',
+    objective: 'Lightwalker steps onto the upper pressure plate to lower the gate for Shadowweaver. Shadowweaver pushes a crate onto the lower switch to permanently unlock the vault corridor.',
+    parTime: 65,
+    lightStart: { x: 100, y: 110 },
+    shadowStart: { x: 80, y: 550 },
+    walls: [
+      { x: 0, y: 220, w: 580, h: 20 },
+      { x: 720, y: 220, w: 180, h: 20 },
+      { x: 380, y: 240, w: 20, h: 220 },
+      { x: 380, y: 540, w: 20, h: 110 },
+      { x: 620, y: 0, w: 20, h: 100 },
+      { x: 620, y: 220, w: 20, h: 330 },
+    ],
+    lightSources: [
+      { type: 'spotlight', x: 40, y: 110, angle: 0, fov: 0.35, range: 950 },
+      { type: 'spotlight', x: 700, y: 560, angle: Math.PI, fov: 0.4, range: 500 }
+    ],
+    mirrors: [
+      { x: 500, y: 110, angle: Math.PI / 4, radius: 18 }
+    ],
+    prisms: [],
+    gates: [
+      { id: 'gate-sec-1', x: 380, y: 460, w: 20, h: 80, color: '#00f5d4' },
+      { id: 'gate-sec-2', x: 620, y: 100, w: 20, h: 120, color: '#ffb830' }
+    ],
+    pressurePlates: [
+      { id: 'plate-sol', x: 260, y: 110, radius: 24, targetGateId: 'gate-sec-1', active: false },
+      { id: 'plate-umbra', x: 480, y: 580, radius: 26, targetGateId: 'gate-sec-2', active: false }
+    ],
+    crates: [
+      { x: 180, y: 350, w: 60, h: 50 }
+    ],
+    guards: [
+      { type: 'LUMEN', x: 700, y: 60, patrol: [{ x: 700, y: 60 }, { x: 700, y: 180 }], speed: 1.1 },
+      { type: 'NYX', x: 240, y: 300, patrol: [{ x: 240, y: 300 }, { x: 240, y: 600 }], speed: 1.0 }
+    ],
+    bonusDiamonds: [
+      { id: 'd5_1', x: 120, y: 110 },
+      { id: 'd5_2', x: 340, y: 580 },
+      { id: 'd5_3', x: 820, y: 100 }
+    ],
+    loot: { x: 780, y: 110 },
+    exit: { x: 820, y: 450 }
+  },
+  // LEVEL 6: THE VAULT MATRIX
+  {
+    title: '6: The Vault Matrix',
+    desc: 'The ultimate heist: swinging spotlights, rotating mirrors, RGB prisms & pressure gates!',
+    objective: 'Synchronize every skill. Bend light with mirrors, split RGB lasers with the prism, hold down the matrix pressure plate, and slip past elite guards to crack the master vault!',
+    parTime: 80,
+    lightStart: { x: 90, y: 80 },
+    shadowStart: { x: 80, y: 560 },
+    walls: [
+      { x: 0, y: 180, w: 340, h: 20 },
+      { x: 480, y: 180, w: 420, h: 20 },
+      { x: 320, y: 200, w: 20, h: 180 },
+      { x: 620, y: 200, w: 20, h: 240 },
+      { x: 0, y: 440, w: 450, h: 20 },
+      { x: 570, y: 440, w: 330, h: 20 },
+    ],
+    lightSources: [
+      { type: 'spotlight', x: 40, y: 80, angle: 0, fov: 0.22, range: 950 },
+      { type: 'spotlight', x: 400, y: 30, angle: Math.PI / 2, fov: 0.45, range: 600, sweep: { amplitude: 0.8, speed: 0.8 } }
+    ],
+    mirrors: [
+      { x: 240, y: 80, angle: 0, radius: 18 },
+      { x: 740, y: 310, angle: Math.PI / 3, radius: 18 }
+    ],
+    prisms: [
+      { x: 400, y: 310 }
+    ],
+    gates: [
+      { id: 'gate-matrix-p', x: 320, y: 380, w: 20, h: 60, color: '#00f5d4' },
+      { id: 'gate-matrix-red', x: 620, y: 440, w: 20, h: 120, color: '#ff0055', reqColor: 'RED', receptor: { x: 600, y: 480 } }
+    ],
+    pressurePlates: [
+      { id: 'plate-matrix', x: 180, y: 320, radius: 24, targetGateId: 'gate-matrix-p', active: false }
+    ],
+    crates: [
+      { x: 180, y: 520, w: 70, h: 50 }
+    ],
+    guards: [
+      { type: 'LUMEN', x: 780, y: 80, patrol: [{ x: 780, y: 80 }, { x: 780, y: 400 }], speed: 1.3 },
+      { type: 'NYX', x: 480, y: 580, patrol: [{ x: 480, y: 580 }, { x: 480, y: 460 }], speed: 1.1 }
+    ],
+    bonusDiamonds: [
+      { id: 'd6_1', x: 150, y: 80 },
+      { id: 'd6_2', x: 80, y: 320 },
+      { id: 'd6_3', x: 820, y: 580 }
+    ],
+    loot: { x: 820, y: 280 },
+    exit: { x: 840, y: 500 }
   }
 ];
 
@@ -361,10 +597,12 @@ class SaveManager {
       unlockedLevelIndex: 0,
       lastLevelIndex: null,
       highScores: {},
+      achievements: {},
+      customLevels: [],
       inProgress: null,
       audioSettings: { muted: false, volume: 0.8 },
       // Control preferences (Settings modal, mobile.js)
-      settings: { touchControls: 'auto', tilt: false, tiltSensitivity: 'medium', leftHanded: false, vibration: true }
+      settings: { touchControls: 'auto', joystickType: 'floating', tilt: false, tiltSensitivity: 'medium', leftHanded: false, vibration: true }
     };
   }
 
@@ -386,6 +624,8 @@ class SaveManager {
         }
         if (Number.isInteger(parsed.lastLevelIndex)) data.lastLevelIndex = parsed.lastLevelIndex;
         if (parsed.highScores && typeof parsed.highScores === 'object') data.highScores = parsed.highScores;
+        if (parsed.achievements && typeof parsed.achievements === 'object') data.achievements = parsed.achievements;
+        if (Array.isArray(parsed.customLevels)) data.customLevels = parsed.customLevels;
         if (parsed.inProgress && typeof parsed.inProgress === 'object') data.inProgress = parsed.inProgress;
         if (parsed.audioSettings) {
           Object.assign(data.audioSettings, parsed.audioSettings);
@@ -455,8 +695,15 @@ class LightShadowEngine {
     // Analog movement vector (-1..1 per axis) fed by the touch joystick or tilt sensor (mobile.js)
     this.analogInput = { x: 0, y: 0 };
 
+    this.pressurePlates = [];
+    this.bonusDiamonds = [];
+    this.ambientMotes = null;
+    this.customLevel = null;
+    this.briefingSeen = {};
+
     this.initEvents();
     this.mobile = window.MobileControls ? new window.MobileControls(this) : null;
+    this.editor = new LevelEditor(this);
     this.updateSoundButton();
     const nameEl = document.getElementById('player-name');
     if (nameEl) nameEl.textContent = this.playerName || 'Guest';
@@ -488,7 +735,7 @@ class LightShadowEngine {
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
       if (key === 'escape') {
-        if (this.isModalOpen()) this.closeLevelSelect();
+        if (this.isModalOpen()) this.closeAllModals();
         else this.togglePause();
         return;
       }
@@ -502,6 +749,8 @@ class LightShadowEngine {
         this.togglePause();
       } else if (key === 'r') {
         this.restartLevel();
+      } else if (key === 'i') {
+        this.openBriefing(this.currentLevelIndex);
       } else if (key === 'enter' && this.gameState === 'WIN') {
         this.nextLevel();
       } else if (key === 'enter' && this.gameState === 'PAUSED') {
@@ -582,6 +831,23 @@ class LightShadowEngine {
 
     document.getElementById('btn-retry-level').addEventListener('click', () => this.restartLevel());
     document.getElementById('btn-overlay-levels').addEventListener('click', () => this.openLevelSelect());
+
+    const bBrief = document.getElementById('btn-briefing');
+    if (bBrief) bBrief.addEventListener('click', () => this.openBriefing(this.currentLevelIndex));
+    const bCloseBrief = document.getElementById('btn-close-briefing');
+    if (bCloseBrief) bCloseBrief.addEventListener('click', () => this.closeBriefing());
+    const bStartBrief = document.getElementById('btn-start-briefing');
+    if (bStartBrief) bStartBrief.addEventListener('click', () => this.closeBriefing());
+
+    const bAch = document.getElementById('btn-achievements');
+    if (bAch) bAch.addEventListener('click', () => this.openAchievements());
+    const bCloseAch = document.getElementById('btn-close-achievements');
+    if (bCloseAch) bCloseAch.addEventListener('click', () => this.closeAchievements());
+
+    const bEd = document.getElementById('btn-editor');
+    if (bEd) bEd.addEventListener('click', () => this.openEditor());
+    const bCloseEd = document.getElementById('btn-close-editor');
+    if (bCloseEd) bCloseEd.addEventListener('click', () => this.closeEditor());
   }
 
   updateSoundButton() {
@@ -624,6 +890,8 @@ class LightShadowEngine {
       mirrors: this.mirrors.map((m) => m.angle),
       crates: this.crates.map((c) => ({ x: c.x, y: c.y })),
       gates: this.gates.map((g) => g.open),
+      pressurePlates: (this.pressurePlates || []).map((p) => p.active),
+      bonusDiamonds: (this.bonusDiamonds || []).map((d) => d.taken),
       guards: this.guards.map((g) => ({ x: g.x, y: g.y, dir: g.dir, angle: g.angle, stunTimer: g.stunTimer })),
       lights: this.lightSources.map((ls) => ({ angle: ls.angle, time: ls.time })),
       lootTaken: this.loot.taken,
@@ -657,6 +925,12 @@ class LightShadowEngine {
     this.mirrors.forEach((m, i) => { m.angle = snap.mirrors[i]; });
     this.crates.forEach((c, i) => Object.assign(c, snap.crates[i]));
     this.gates.forEach((g, i) => { g.open = !!snap.gates[i]; });
+    if (snap.pressurePlates && this.pressurePlates) {
+      this.pressurePlates.forEach((p, i) => { p.active = !!snap.pressurePlates[i]; });
+    }
+    if (snap.bonusDiamonds && this.bonusDiamonds) {
+      this.bonusDiamonds.forEach((d, i) => { d.taken = !!snap.bonusDiamonds[i]; });
+    }
     this.guards.forEach((g, i) => Object.assign(g, snap.guards[i]));
     this.lightSources.forEach((ls, i) => Object.assign(ls, snap.lights[i]));
     this.loot.taken = !!snap.lootTaken;
@@ -698,10 +972,121 @@ class LightShadowEngine {
   }
 
   isModalOpen() {
-    return ['levels-modal', 'settings-modal'].some((id) => {
+    return ['levels-modal', 'settings-modal', 'briefing-modal', 'achievements-modal', 'editor-modal'].some((id) => {
       const el = document.getElementById(id);
       return el && !el.classList.contains('hidden');
     });
+  }
+
+  closeAllModals() {
+    ['levels-modal', 'settings-modal', 'briefing-modal', 'achievements-modal', 'editor-modal'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    });
+  }
+
+  // -------------------------------------------------------------
+  // STORY BRIEFINGS & DIALOGUE
+  // -------------------------------------------------------------
+  openBriefing(levelIndex) {
+    const briefing = MISSION_BRIEFINGS[levelIndex] || MISSION_BRIEFINGS[0];
+    const solEl = document.getElementById('briefing-sol-text');
+    const umbraEl = document.getElementById('briefing-umbra-text');
+    const intelEl = document.getElementById('briefing-intel-text');
+    if (solEl) solEl.textContent = `"${briefing.sol}"`;
+    if (umbraEl) umbraEl.textContent = `"${briefing.umbra}"`;
+    if (intelEl) intelEl.textContent = briefing.intel;
+
+    this.keys = {};
+    document.getElementById('briefing-modal').classList.remove('hidden');
+  }
+
+  closeBriefing() {
+    const modal = document.getElementById('briefing-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  // -------------------------------------------------------------
+  // ACHIEVEMENTS & TROPHIES
+  // -------------------------------------------------------------
+  openAchievements() {
+    this.renderAchievements();
+    this.keys = {};
+    document.getElementById('achievements-modal').classList.remove('hidden');
+  }
+
+  closeAchievements() {
+    const modal = document.getElementById('achievements-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  unlockAchievement(id) {
+    if (!this.saveData.achievements) this.saveData.achievements = {};
+    if (this.saveData.achievements[id]) return; // already unlocked
+
+    const def = ACHIEVEMENTS_DEF.find((a) => a.id === id);
+    if (!def) return;
+
+    this.saveData.achievements[id] = { unlocked: true, unlockedAt: Date.now() };
+    SaveManager.save(this.saveData);
+    this.audio.playAchievement();
+    this.haptic([40, 60, 90]);
+    this.showAchievementToast(def);
+
+    const modal = document.getElementById('achievements-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+      this.renderAchievements();
+    }
+  }
+
+  showAchievementToast(achievement) {
+    this.showToast(`🏆 TROPHY UNLOCKED: ${achievement.title}!`);
+  }
+
+  renderAchievements() {
+    const grid = document.getElementById('achievements-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const userAch = this.saveData.achievements || {};
+    let unlockedCount = 0;
+
+    ACHIEVEMENTS_DEF.forEach((ach) => {
+      const isUnlocked = !!userAch[ach.id];
+      if (isUnlocked) unlockedCount++;
+
+      const card = document.createElement('div');
+      card.className = `achievement-card ${isUnlocked ? 'unlocked' : ''}`;
+      const dateStr = isUnlocked && userAch[ach.id].unlockedAt
+        ? new Date(userAch[ach.id].unlockedAt).toLocaleDateString()
+        : 'Locked';
+
+      card.innerHTML = `
+        <div class="badge-icon">${ach.icon}</div>
+        <div class="badge-info">
+          <h4>${ach.title}</h4>
+          <p>${ach.desc}</p>
+          <span class="badge-date">${isUnlocked ? `✔ Unlocked ${dateStr}` : '🔒 Locked'}</span>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    const countEl = document.getElementById('achievements-count');
+    if (countEl) countEl.textContent = `🏆 ${unlockedCount} / ${ACHIEVEMENTS_DEF.length} Unlocked`;
+    const barEl = document.getElementById('achievement-bar-fill');
+    if (barEl) barEl.style.width = `${Math.round((unlockedCount / ACHIEVEMENTS_DEF.length) * 100)}%`;
+  }
+
+  // -------------------------------------------------------------
+  // CUSTOM LEVEL EDITOR WORKSHOP
+  // -------------------------------------------------------------
+  openEditor() {
+    this.pause('WORKSHOP ACTIVE', 'Game paused while custom heist workshop is open.');
+    this.editor.open();
+  }
+
+  closeEditor() {
+    this.editor.close();
   }
 
   saveSettings() {
@@ -771,7 +1156,8 @@ class LightShadowEngine {
 
   loadLevel(index, options = {}) {
     this.currentLevelIndex = index;
-    const lvl = LEVELS[index];
+    const lvl = this.customLevel && index === -1 ? this.customLevel : LEVELS[index];
+    if (!lvl) return;
 
     document.getElementById('level-title').textContent = lvl.title;
 
@@ -787,8 +1173,13 @@ class LightShadowEngine {
     this.gates = deepCopy(lvl.gates).map((g) => ({ ...g, open: false }));
     this.crates = deepCopy(lvl.crates);
     this.guards = deepCopy(lvl.guards).map((g) => ({ ...g, dir: 1, angle: 0, stunTimer: 0 }));
+    this.pressurePlates = deepCopy(lvl.pressurePlates || []).map((p) => ({ ...p, active: false }));
+    this.bonusDiamonds = deepCopy(lvl.bonusDiamonds || []).map((d) => ({ ...d, taken: false }));
     this.loot = { ...deepCopy(lvl.loot), taken: false };
     this.exit = deepCopy(lvl.exit);
+
+    // Pre-cache static wall segments for performance
+    this.cachedStaticSegments = this.buildStaticSegments();
 
     this.activeCharacter = 'LIGHT';
     this.historyStack = [];
@@ -798,6 +1189,7 @@ class LightShadowEngine {
     this.gameState = 'PLAYING';
     this.levelTime = 0;
     this.rewindsUsed = 0;
+    this.stunsUsed = 0;
     this.prismActiveLastFrame = false;
     this.shownTimerText = '';
     this.keys = {};
@@ -812,11 +1204,17 @@ class LightShadowEngine {
     this.updateTimerUI();
 
     if (!options.silent) {
-      // A fresh attempt replaces any older mid-level snapshot
-      this.saveData.lastLevelIndex = index;
-      this.saveData.inProgress = null;
-      SaveManager.save(this.saveData);
-      this.playLevelIntro(index);
+      if (index >= 0) {
+        // A fresh attempt replaces any older mid-level snapshot
+        this.saveData.lastLevelIndex = index;
+        this.saveData.inProgress = null;
+        SaveManager.save(this.saveData);
+        this.playLevelIntro(index);
+        if (!this.briefingSeen[index]) {
+          this.briefingSeen[index] = true;
+          this.openBriefing(index);
+        }
+      }
     }
   }
 
@@ -867,15 +1265,26 @@ class LightShadowEngine {
     lootPill.classList.toggle('done', this.loot.taken);
     lootPill.innerHTML = `<span class="icon">💎</span><span class="text">LOOT: ${this.loot.taken ? '1/1' : '0/1'}</span>`;
 
+    const totalDiamonds = (this.bonusDiamonds || []).length;
+    const takenDiamonds = (this.bonusDiamonds || []).filter((d) => d.taken).length;
+    const diamondPill = document.getElementById('diamond-status');
+    if (diamondPill) {
+      diamondPill.classList.toggle('done', totalDiamonds > 0 && takenDiamonds === totalDiamonds);
+      diamondPill.innerHTML = `<span class="icon">✨</span><span class="text">BONUS: ${takenDiamonds}/${totalDiamonds}</span>`;
+    }
+
     // Mission banner walks the player through the two win steps
-    const lvl = LEVELS[this.currentLevelIndex];
-    document.getElementById('mission-objective').textContent = this.loot.taken
-      ? 'Loot secured! The exit portal is open: bring BOTH Lightwalker and Shadowweaver into it to escape.'
-      : lvl.objective;
+    const lvl = this.customLevel && this.currentLevelIndex === -1 ? this.customLevel : LEVELS[this.currentLevelIndex];
+    if (lvl) {
+      document.getElementById('mission-objective').textContent = this.loot.taken
+        ? 'Loot secured! The exit portal is open: bring BOTH Lightwalker and Shadowweaver into it to escape.'
+        : lvl.objective;
+    }
   }
 
   updateTimerUI() {
-    const lvl = LEVELS[this.currentLevelIndex];
+    const lvl = this.customLevel && this.currentLevelIndex === -1 ? this.customLevel : LEVELS[this.currentLevelIndex];
+    if (!lvl) return;
     const text = `${formatTime(this.levelTime)} / ${formatTime(lvl.parTime)}`;
     if (text === this.shownTimerText) return;
     this.shownTimerText = text;
@@ -892,6 +1301,9 @@ class LightShadowEngine {
       shadow: { ...this.shadowChar },
       mirrors: deepCopy(this.mirrors),
       crates: deepCopy(this.crates),
+      gates: this.gates.map((g) => g.open),
+      pressurePlates: this.pressurePlates.map((p) => p.active),
+      bonusDiamonds: this.bonusDiamonds.map((d) => d.taken),
       loot: { ...this.loot }
     });
   }
@@ -905,6 +1317,9 @@ class LightShadowEngine {
       this.shadowChar = { ...state.shadow };
       this.mirrors = deepCopy(state.mirrors);
       this.crates = deepCopy(state.crates);
+      if (state.gates) this.gates.forEach((g, i) => { g.open = !!state.gates[i]; });
+      if (state.pressurePlates) this.pressurePlates.forEach((p, i) => { p.active = !!state.pressurePlates[i]; });
+      if (state.bonusDiamonds) this.bonusDiamonds.forEach((d, i) => { d.taken = !!state.bonusDiamonds[i]; });
       this.loot = { ...state.loot };
       this.lastDistPushed = 0;
       this.rewindsUsed++;
@@ -964,13 +1379,16 @@ class LightShadowEngine {
     // 1. Update Light Sources (rotation / pendulum sweep)
     this.updateLightSources(dt);
 
-    // 2. Raycast & Calculate Light Polygons
+    // 2. Update Pressure Plates
+    this.updatePressurePlates();
+
+    // 3. Raycast & Calculate Light Polygons
     this.calculateLighting();
 
-    // 3. Move Active Character (with smooth wall sliding & crate pushing)
+    // 4. Move Active Character (with smooth wall sliding & crate pushing)
     this.handleMovement(dt);
 
-    // 4. Update Guards AI (particles animate in gameLoop so they also run behind overlays)
+    // 5. Update Guards AI (particles animate in gameLoop so they also run behind overlays)
     this.updateGuards(dt);
     if (this.gameState !== 'PLAYING') return;
 
@@ -978,7 +1396,8 @@ class LightShadowEngine {
     this.checkTerrainConstraints(dt);
     if (this.gameState !== 'PLAYING') return;
 
-    // 7. Check Loot & Exit
+    // 7. Check Bonus Diamonds & Objectives
+    this.checkBonusDiamonds();
     this.checkObjectives();
 
     this.updateTimerUI();
@@ -989,6 +1408,47 @@ class LightShadowEngine {
       this.snapshotTimer = 0;
       this.saveSnapshot();
     }
+  }
+
+  updatePressurePlates() {
+    this.pressurePlates.forEach((plate) => {
+      const wasActive = plate.active;
+      const lightOn = Math.hypot(this.lightChar.x - plate.x, this.lightChar.y - plate.y) < (plate.radius + this.lightChar.radius);
+      const shadowOn = Math.hypot(this.shadowChar.x - plate.x, this.shadowChar.y - plate.y) < (plate.radius + this.shadowChar.radius);
+      const crateOn = this.crates.some((c) => this.circleRectOverlap(plate.x, plate.y, plate.radius, c));
+
+      plate.active = lightOn || shadowOn || crateOn;
+
+      if (plate.active !== wasActive) {
+        if (plate.active) {
+          this.audio.playPlateDown();
+          this.haptic(20);
+          this.unlockAchievement('pressure_point');
+        } else {
+          this.audio.playPlateUp();
+        }
+        const targetGate = this.gates.find((g) => g.id === plate.targetGateId);
+        if (targetGate) {
+          targetGate.open = plate.active;
+        }
+      }
+    });
+  }
+
+  checkBonusDiamonds() {
+    const char = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
+    this.bonusDiamonds.forEach((dia) => {
+      if (!dia.taken && Math.hypot(char.x - dia.x, char.y - dia.y) < 28) {
+        dia.taken = true;
+        this.audio.playBonusLoot();
+        this.haptic(30);
+        this.pushStateHistory();
+        this.updateUI();
+        if (this.bonusDiamonds.length > 0 && this.bonusDiamonds.every((d) => d.taken)) {
+          this.unlockAchievement('diamond_heist');
+        }
+      }
+    });
   }
 
   updateLightSources(dt) {
@@ -1070,6 +1530,9 @@ class LightShadowEngine {
     const blocking = this.crates.filter((c) => this.circleRectOverlap(nx, ny, char.radius, c));
     for (const c of blocking) {
       if (!this.canCrateMove(c, pdx, pdy)) return false;
+    }
+    if (blocking.length > 0) {
+      this.unlockAchievement('shadow_bridge');
     }
     blocking.forEach((c) => {
       c.x += pdx;
@@ -1169,7 +1632,7 @@ class LightShadowEngine {
   // -------------------------------------------------------------
   // RAYCASTING & LIGHTING CALCULATIONS
   // -------------------------------------------------------------
-  buildSegments(includePrisms) {
+  buildStaticSegments() {
     const segments = [];
     const W = this.canvas.width;
     const H = this.canvas.height;
@@ -1186,7 +1649,19 @@ class LightShadowEngine {
     segments.push({ a: { x: W, y: H }, b: { x: 0, y: H } });
     segments.push({ a: { x: 0, y: H }, b: { x: 0, y: 0 } });
 
-    this.walls.forEach(addRect);
+    if (this.walls) this.walls.forEach(addRect);
+    return segments;
+  }
+
+  buildSegments(includePrisms) {
+    const segments = (this.cachedStaticSegments || this.buildStaticSegments()).slice();
+    const addRect = (r) => {
+      segments.push({ a: { x: r.x, y: r.y }, b: { x: r.x + r.w, y: r.y } });
+      segments.push({ a: { x: r.x + r.w, y: r.y }, b: { x: r.x + r.w, y: r.y + r.h } });
+      segments.push({ a: { x: r.x + r.w, y: r.y + r.h }, b: { x: r.x, y: r.y + r.h } });
+      segments.push({ a: { x: r.x, y: r.y + r.h }, b: { x: r.x, y: r.y } });
+    };
+
     this.gates.filter((g) => !g.open).forEach(addRect);
     this.crates.forEach(addRect);
     if (includePrisms) this.prisms.map(prismRect).forEach(addRect);
@@ -1240,7 +1715,10 @@ class LightShadowEngine {
     }
 
     const prismActive = usedPrisms.size > 0;
-    if (prismActive && !this.prismActiveLastFrame) this.audio.playPrism();
+    if (prismActive && !this.prismActiveLastFrame) {
+      this.audio.playPrism();
+      this.unlockAchievement('prism_master');
+    }
     this.prismActiveLastFrame = prismActive;
 
     // Color receptors: a gate unlocks (and stays open) once its colour beam reaches the receptor
@@ -1256,7 +1734,10 @@ class LightShadowEngine {
     // Nyx Guards are stunned by any light that touches them
     this.guards.forEach((g) => {
       if (g.type === 'NYX' && this.isPointInAnyLight(g)) {
-        if (g.stunTimer <= 0) this.audio.playStun();
+        if (g.stunTimer <= 0) {
+          this.audio.playStun();
+          this.stunsUsed = (this.stunsUsed || 0) + 1;
+        }
         g.stunTimer = 3.0;
       }
     });
@@ -1461,23 +1942,50 @@ class LightShadowEngine {
 
   completeLevel() {
     const index = this.currentLevelIndex;
-    const lvl = LEVELS[index];
+    const lvl = this.customLevel && index === -1 ? this.customLevel : LEVELS[index];
+    if (!lvl) return;
     const time = this.levelTime;
     const stars = this.starsFor(time, this.rewindsUsed, lvl.parTime);
 
-    // Persist the result (DDD §4: unlockedLevelIndex + per-level best time)
-    const key = `level_${index}`;
-    const prev = this.saveData.highScores[key];
-    const newBest = !prev || !prev.completed || time < prev.bestTimeSeconds;
-    this.saveData.highScores[key] = {
-      completed: true,
-      bestTimeSeconds: newBest ? Math.round(time * 10) / 10 : prev.bestTimeSeconds,
-      stars: Math.max(stars, (prev && prev.stars) || 0)
-    };
-    this.saveData.unlockedLevelIndex = Math.max(this.saveData.unlockedLevelIndex, Math.min(index + 1, LEVELS.length - 1));
-    this.saveData.lastLevelIndex = index + 1 < LEVELS.length ? index + 1 : 0;
-    this.saveData.inProgress = null;
-    SaveManager.save(this.saveData);
+    let newBest = false;
+    if (index >= 0) {
+      // Persist the result (DDD §4: unlockedLevelIndex + per-level best time)
+      const key = `level_${index}`;
+      const prev = this.saveData.highScores[key];
+      newBest = !prev || !prev.completed || time < prev.bestTimeSeconds;
+      this.saveData.highScores[key] = {
+        completed: true,
+        bestTimeSeconds: newBest ? Math.round(time * 10) / 10 : prev.bestTimeSeconds,
+        stars: Math.max(stars, (prev && prev.stars) || 0)
+      };
+      this.saveData.unlockedLevelIndex = Math.max(this.saveData.unlockedLevelIndex, Math.min(index + 1, LEVELS.length - 1));
+      this.saveData.lastLevelIndex = index + 1 < LEVELS.length ? index + 1 : 0;
+      this.saveData.inProgress = null;
+      SaveManager.save(this.saveData);
+
+      // Achievements logic
+      if (index === 0) this.unlockAchievement('first_steps');
+      if (time <= lvl.parTime) this.unlockAchievement('speed_demon');
+      if (this.rewindsUsed === 0) this.unlockAchievement('no_regrets');
+      if ((this.stunsUsed || 0) === 0 && this.guards.length > 0) this.unlockAchievement('ghost');
+      if (this.bonusDiamonds && this.bonusDiamonds.length > 0 && this.bonusDiamonds.every((d) => d.taken)) {
+        this.unlockAchievement('diamond_heist');
+      }
+
+      let allThreeStars = true;
+      for (let i = 0; i < LEVELS.length; i++) {
+        const rec = this.saveData.highScores[`level_${i}`];
+        if (!rec || !rec.completed || (rec.stars || 0) < 3) {
+          allThreeStars = false;
+          break;
+        }
+      }
+      if (allThreeStars) {
+        this.unlockAchievement('master_thief');
+      }
+    } else {
+      this.unlockAchievement('heist_architect');
+    }
 
     this.audio.playWin();
     this.haptic([30, 40, 60]);
@@ -1485,7 +1993,7 @@ class LightShadowEngine {
     this.updateTimerUI();
 
     const isFinal = index === LEVELS.length - 1;
-    const best = this.saveData.highScores[key].bestTimeSeconds;
+    const best = index >= 0 ? this.saveData.highScores[`level_${index}`].bestTimeSeconds : time;
     const starText = '★'.repeat(stars) + '☆'.repeat(3 - stars);
     const rows = [
       ['Time', `${formatTime(time)}${newBest ? ' (new best!)' : ''}`],
@@ -1495,7 +2003,19 @@ class LightShadowEngine {
       ['Rating', starText]
     ];
 
-    if (isFinal) {
+    if (index === -1) {
+      this.gameState = 'WIN';
+      this.showOverlay('CUSTOM HEIST CLEARED!',
+        `Your custom infiltration "${lvl.title}" was completed successfully in ${formatTime(time)}!`,
+        rows, 'Workshop 🛠️');
+      const nextBtn = document.getElementById('btn-next-level');
+      if (nextBtn) {
+        nextBtn.onclick = () => {
+          document.getElementById('game-overlay').classList.add('hidden');
+          this.openEditor();
+        };
+      }
+    } else if (isFinal) {
       // End of the campaign: summarise every mission
       this.gameState = 'CAMPAIGN_COMPLETE';
       let totalStars = 0;
@@ -1574,6 +2094,9 @@ class LightShadowEngine {
     // 1. Draw Floor Tile Grid Pattern
     this.drawGrid();
 
+    // Atmosphere: Floating noir motes
+    this.drawAtmosphere();
+
     // 2. Draw Light Polygons (Spotlights, Lamps & Reflections)
     this.lightPolygons.forEach((poly) => this.fillPolygon(poly.pts, poly.color));
 
@@ -1632,7 +2155,10 @@ class LightShadowEngine {
       }
     });
 
-    // 6. Draw Crates
+    // 6. Draw Pressure Plates
+    this.drawPressurePlates();
+
+    // 7. Draw Crates
     this.crates.forEach((c) => {
       this.ctx.lineWidth = 2;
       this.ctx.fillStyle = '#6c584c';
@@ -1712,7 +2238,10 @@ class LightShadowEngine {
       }
     });
 
-    // 11. Draw Loot
+    // 12. Draw Bonus Data Diamonds
+    this.drawBonusDiamonds();
+
+    // 13. Draw Loot
     if (!this.loot.taken) {
       const bob = Math.sin(this.animTime * 3) * 3;
       this.ctx.save();
@@ -1802,6 +2331,610 @@ class LightShadowEngine {
       this.ctx.moveTo(0, y);
       this.ctx.lineTo(this.canvas.width, y);
       this.ctx.stroke();
+    }
+  }
+
+  drawAtmosphere() {
+    if (!this.ambientMotes) {
+      this.ambientMotes = Array.from({ length: 35 }, () => ({
+        x: Math.random() * this.canvas.width,
+        y: Math.random() * this.canvas.height,
+        vx: (Math.random() - 0.5) * 6,
+        vy: -4 - Math.random() * 8,
+        radius: Math.random() * 1.5 + 0.8,
+        alpha: Math.random() * 0.4 + 0.1,
+        phase: Math.random() * Math.PI * 2
+      }));
+    }
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+    this.ctx.save();
+    this.ambientMotes.forEach((m) => {
+      m.x += m.vx * 0.016;
+      m.y += m.vy * 0.016;
+      if (m.y < 0) { m.y = H; m.x = Math.random() * W; }
+      if (m.x < 0) m.x = W;
+      if (m.x > W) m.x = 0;
+      const pulsAlpha = m.alpha * (0.6 + 0.4 * Math.sin(this.animTime * 2 + m.phase));
+      this.ctx.fillStyle = `rgba(160, 190, 255, ${pulsAlpha.toFixed(2)})`;
+      this.ctx.beginPath();
+      this.ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+      this.ctx.fill();
+    });
+    this.ctx.restore();
+  }
+
+  drawPressurePlates() {
+    this.pressurePlates.forEach((p) => {
+      this.ctx.save();
+      const pad = 3;
+      if (p.active) {
+        this.ctx.fillStyle = '#0f3833';
+        this.ctx.strokeStyle = '#00f5d4';
+        this.ctx.lineWidth = 2;
+        this.ctx.shadowColor = '#00f5d4';
+        this.ctx.shadowBlur = 12;
+        this.ctx.fillRect(p.x + pad, p.y + pad, p.w - pad * 2, p.h - pad * 2);
+        this.ctx.strokeRect(p.x + pad, p.y + pad, p.w - pad * 2, p.h - pad * 2);
+        this.ctx.fillStyle = '#00f5d4';
+        this.ctx.beginPath();
+        this.ctx.arc(p.x + p.w / 2, p.y + p.h / 2, 5, 0, Math.PI * 2);
+        this.ctx.fill();
+      } else {
+        this.ctx.fillStyle = '#181d2a';
+        this.ctx.strokeStyle = '#38425d';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.fillRect(p.x, p.y, p.w, p.h);
+        this.ctx.strokeRect(p.x, p.y, p.w, p.h);
+        this.ctx.strokeStyle = '#4e5b7c';
+        this.ctx.strokeRect(p.x + 4, p.y + 4, p.w - 8, p.h - 8);
+      }
+      this.ctx.restore();
+    });
+  }
+
+  drawBonusDiamonds() {
+    this.bonusDiamonds.forEach((d) => {
+      if (d.taken) return;
+      const bob = Math.sin(this.animTime * 4 + d.x * 0.1) * 3;
+      const cy = d.y + bob;
+      this.ctx.save();
+      this.ctx.shadowColor = '#00f5d4';
+      this.ctx.shadowBlur = 10 + Math.sin(this.animTime * 6) * 4;
+      this.ctx.fillStyle = '#70e000';
+      this.ctx.strokeStyle = '#ccff33';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.beginPath();
+      this.ctx.moveTo(d.x, cy - 10);
+      this.ctx.lineTo(d.x + 7, cy);
+      this.ctx.lineTo(d.x, cy + 10);
+      this.ctx.lineTo(d.x - 7, cy);
+      this.ctx.closePath();
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.beginPath();
+      this.ctx.arc(d.x, cy, 2.5, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.restore();
+    });
+  }
+}
+
+// -------------------------------------------------------------
+// CUSTOM HEIST WORKSHOP (LEVEL EDITOR)
+// -------------------------------------------------------------
+class LevelEditor {
+  constructor(game) {
+    this.game = game;
+    this.canvas = document.getElementById('editorCanvas');
+    this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+    this.modal = document.getElementById('editor-modal');
+    this.activeTool = 'wall';
+    this.isDragging = false;
+    this.dragStart = { x: 0, y: 0 };
+    this.dragCurrent = { x: 0, y: 0 };
+    this.mousePos = { x: 0, y: 0 };
+
+    this.level = this.defaultLevel();
+    this.initUI();
+  }
+
+  defaultLevel() {
+    return {
+      title: 'My Custom Infiltration',
+      parTime: 45,
+      objective: 'Custom infiltration: manipulate light paths, secure the loot and escape.',
+      desc: 'Player-crafted heist matrix.',
+      lightStart: { x: 80, y: 550 },
+      shadowStart: { x: 80, y: 100 },
+      loot: { x: 820, y: 325 },
+      exit: { x: 80, y: 325 },
+      walls: [
+        { x: 300, y: 150, w: 20, h: 350 },
+        { x: 600, y: 150, w: 20, h: 350 }
+      ],
+      lightSources: [
+        { x: 120, y: 550, angle: 0, fov: 0.85, range: 420, sweepSpeed: 0, sweepAngle: 0 }
+      ],
+      mirrors: [
+        { x: 450, y: 325, angle: Math.PI / 4, spread: 0.25 }
+      ],
+      prisms: [],
+      pressurePlates: [
+        { x: 450, y: 500, w: 32, h: 32, targetGate: 0 }
+      ],
+      gates: [
+        { x: 600, y: 280, w: 20, h: 90, color: '#38b000', reqColor: 'GREEN' }
+      ],
+      crates: [
+        { x: 350, y: 310, w: 36, h: 36 }
+      ],
+      guards: [],
+      bonusDiamonds: [
+        { x: 450, y: 180 }
+      ]
+    };
+  }
+
+  initUI() {
+    if (!this.canvas) return;
+
+    // Tool selection buttons
+    const toolBtns = document.querySelectorAll('#editor-tools .tool-btn');
+    toolBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        toolBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.activeTool = btn.dataset.tool;
+        this.updateTooltip();
+      });
+    });
+
+    // Inputs
+    const titleInput = document.getElementById('editor-level-title');
+    if (titleInput) {
+      titleInput.addEventListener('input', (e) => {
+        this.level.title = e.target.value.trim() || 'Custom Infiltration';
+      });
+    }
+
+    const parInput = document.getElementById('editor-level-par');
+    if (parInput) {
+      parInput.addEventListener('change', (e) => {
+        this.level.parTime = Math.max(10, parseInt(e.target.value, 10) || 45);
+      });
+    }
+
+    // Action buttons
+    const btnClear = document.getElementById('btn-editor-clear');
+    if (btnClear) btnClear.addEventListener('click', () => this.clearLevel());
+
+    const btnExport = document.getElementById('btn-editor-export');
+    if (btnExport) btnExport.addEventListener('click', () => this.exportCode());
+
+    const btnImport = document.getElementById('btn-editor-import');
+    if (btnImport) btnImport.addEventListener('click', () => this.importCode());
+
+    const btnPlay = document.getElementById('btn-editor-play');
+    if (btnPlay) btnPlay.addEventListener('click', () => this.playtestHeist());
+
+    // Canvas Events
+    this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+    this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+    window.addEventListener('mouseup', (e) => this.onMouseUp(e));
+    this.canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const pos = this.getCanvasPos(e);
+      this.eraseAt(pos.x, pos.y);
+      this.draw();
+    });
+  }
+
+  updateTooltip() {
+    const tip = document.getElementById('editor-tooltip');
+    if (!tip) return;
+    const tips = {
+      wall: 'Click or drag on grid to build dark walls.',
+      gate: 'Click or drag to place a security gate.',
+      crate: 'Click to place a pushable crate.',
+      spotlight: 'Click to place a directional spotlight.',
+      lamp: 'Click to place a 360° omnidirectional lamp.',
+      mirror: 'Click to place a reflective mirror.',
+      prism: 'Click to place a light-splitting prism.',
+      plate: 'Click to place a pressure plate linked to the first gate.',
+      guard_lumen: 'Click to place a Lumen patrol guard (sees in light).',
+      guard_nyx: 'Click to place a Nyx stealth guard (sees in darkness).',
+      diamond: 'Click to place a collectible bonus diamond.',
+      light_start: 'Click to relocate Lightwalker starting spawn.',
+      shadow_start: 'Click to relocate Shadowweaver starting spawn.',
+      loot: 'Click to reposition the primary vault loot.',
+      exit: 'Click to reposition the exit twilight portal.',
+      erase: 'Click any entity or wall to erase it.'
+    };
+    tip.textContent = tips[this.activeTool] || 'Click to place element.';
+  }
+
+  getCanvasPos(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  snap(val, step = 20) {
+    return Math.round(val / step) * step;
+  }
+
+  onMouseDown(e) {
+    if (e.button === 2) return;
+    const pos = this.getCanvasPos(e);
+    const snapX = this.snap(pos.x);
+    const snapY = this.snap(pos.y);
+
+    if (this.activeTool === 'erase') {
+      this.eraseAt(pos.x, pos.y);
+      this.draw();
+      return;
+    }
+
+    if (this.activeTool === 'wall' || this.activeTool === 'gate') {
+      this.isDragging = true;
+      this.dragStart = { x: snapX, y: snapY };
+      this.dragCurrent = { x: snapX, y: snapY };
+      return;
+    }
+
+    this.placeEntity(this.activeTool, snapX, snapY);
+    this.draw();
+  }
+
+  onMouseMove(e) {
+    const pos = this.getCanvasPos(e);
+    this.mousePos = { x: this.snap(pos.x), y: this.snap(pos.y) };
+    if (this.isDragging) {
+      this.dragCurrent = { x: this.snap(pos.x), y: this.snap(pos.y) };
+    }
+    this.draw();
+  }
+
+  onMouseUp(e) {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    const minX = Math.min(this.dragStart.x, this.dragCurrent.x);
+    const minY = Math.min(this.dragStart.y, this.dragCurrent.y);
+    const w = Math.max(20, Math.abs(this.dragCurrent.x - this.dragStart.x));
+    const h = Math.max(20, Math.abs(this.dragCurrent.y - this.dragStart.y));
+
+    if (this.activeTool === 'wall') {
+      this.level.walls.push({ x: minX, y: minY, w, h });
+    } else if (this.activeTool === 'gate') {
+      this.level.gates.push({ x: minX, y: minY, w, h, color: '#38b000', reqColor: 'GREEN' });
+    }
+    this.draw();
+  }
+
+  placeEntity(tool, x, y) {
+    if (tool === 'light_start') {
+      this.level.lightStart = { x, y };
+    } else if (tool === 'shadow_start') {
+      this.level.shadowStart = { x, y };
+    } else if (tool === 'loot') {
+      this.level.loot = { x, y };
+    } else if (tool === 'exit') {
+      this.level.exit = { x, y };
+    } else if (tool === 'spotlight') {
+      this.level.lightSources.push({ x, y, angle: 0, fov: 0.85, range: 450, sweepSpeed: 0, sweepAngle: 0 });
+    } else if (tool === 'lamp') {
+      this.level.lightSources.push({ x, y, angle: 0, fov: Math.PI * 2, range: 240, sweepSpeed: 0, sweepAngle: 0 });
+    } else if (tool === 'mirror') {
+      this.level.mirrors.push({ x, y, angle: Math.PI / 4, spread: 0.25 });
+    } else if (tool === 'prism') {
+      this.level.prisms.push({ x, y });
+    } else if (tool === 'plate') {
+      this.level.pressurePlates.push({ x: x - 16, y: y - 16, w: 32, h: 32, targetGate: 0 });
+    } else if (tool === 'crate') {
+      this.level.crates.push({ x: x - 18, y: y - 18, w: 36, h: 36 });
+    } else if (tool === 'guard_lumen') {
+      this.level.guards.push({ type: 'LUMEN', x, y, speed: 1.2, patrol: [{ x, y }, { x: Math.min(860, x + 160), y }] });
+    } else if (tool === 'guard_nyx') {
+      this.level.guards.push({ type: 'NYX', x, y, speed: 1.2, patrol: [{ x, y }, { x: Math.min(860, x + 160), y }] });
+    } else if (tool === 'diamond') {
+      this.level.bonusDiamonds.push({ x, y });
+    }
+  }
+
+  eraseAt(x, y) {
+    const hitsRect = (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    const hitsPt = (pt, r = 24) => Math.hypot(pt.x - x, pt.y - y) <= r;
+
+    this.level.walls = this.level.walls.filter((w) => !hitsRect(w));
+    this.level.gates = this.level.gates.filter((g) => !hitsRect(g));
+    this.level.crates = this.level.crates.filter((c) => !hitsRect(c));
+    this.level.pressurePlates = this.level.pressurePlates.filter((p) => !hitsRect(p));
+    this.level.mirrors = this.level.mirrors.filter((m) => !hitsPt(m));
+    this.level.prisms = this.level.prisms.filter((p) => !hitsPt(p));
+    this.level.lightSources = this.level.lightSources.filter((ls) => !hitsPt(ls));
+    this.level.guards = this.level.guards.filter((g) => !hitsPt(g));
+    this.level.bonusDiamonds = this.level.bonusDiamonds.filter((d) => !hitsPt(d));
+  }
+
+  clearLevel() {
+    if (!window.confirm('Clear all placed walls, lights and guards in the workshop?')) return;
+    this.level.walls = [];
+    this.level.gates = [];
+    this.level.crates = [];
+    this.level.mirrors = [];
+    this.level.prisms = [];
+    this.level.lightSources = [];
+    this.level.pressurePlates = [];
+    this.level.guards = [];
+    this.level.bonusDiamonds = [];
+    this.draw();
+  }
+
+  exportCode() {
+    this.game.unlockAchievement('heist_architect');
+    const jsonStr = JSON.stringify(this.level, null, 2);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(jsonStr).then(() => {
+          this.game.showToast('📋 Level JSON blueprint copied to clipboard!');
+        }).catch(() => {
+          window.prompt('Copy your custom level blueprint JSON:', jsonStr);
+        });
+      } else {
+        window.prompt('Copy your custom level blueprint JSON:', jsonStr);
+      }
+    } catch (e) {
+      window.prompt('Copy your custom level blueprint JSON:', jsonStr);
+    }
+  }
+
+  importCode() {
+    const input = window.prompt('Paste custom level JSON code:');
+    if (!input) return;
+    try {
+      const parsed = JSON.parse(input);
+      if (!parsed.lightStart || !parsed.shadowStart || !parsed.loot || !parsed.exit) {
+        throw new Error('Missing essential spawn, loot or exit portals.');
+      }
+      this.level = Object.assign(this.defaultLevel(), parsed);
+      const titleEl = document.getElementById('editor-level-title');
+      const parEl = document.getElementById('editor-level-par');
+      if (titleEl) titleEl.value = this.level.title || 'Custom Heist';
+      if (parEl) parEl.value = this.level.parTime || 45;
+      this.draw();
+      this.game.showToast('✅ Custom level loaded successfully into workshop!');
+    } catch (err) {
+      window.alert('Invalid level JSON blueprint format: ' + err.message);
+    }
+  }
+
+  playtestHeist() {
+    this.game.unlockAchievement('heist_architect');
+    const lvlCopy = deepCopy(this.level);
+    this.game.customLevel = lvlCopy;
+    this.close();
+    this.game.loadLevel(-1);
+    this.game.showToast(`🎮 Infiltrating custom heist: "${lvlCopy.title}"!`);
+  }
+
+  open() {
+    if (!this.modal) return;
+    const titleEl = document.getElementById('editor-level-title');
+    const parEl = document.getElementById('editor-level-par');
+    if (titleEl) titleEl.value = this.level.title;
+    if (parEl) parEl.value = this.level.parTime;
+    this.modal.classList.remove('hidden');
+    this.draw();
+  }
+
+  close() {
+    if (!this.modal) return;
+    this.modal.classList.add('hidden');
+  }
+
+  draw() {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background & Blueprint Grid
+    ctx.fillStyle = '#0a0d14';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = 'rgba(74, 94, 138, 0.15)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 20) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    for (let y = 0; y < H; y += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+
+    // Draw Walls
+    ctx.fillStyle = '#1e2538';
+    ctx.strokeStyle = '#4a577c';
+    ctx.lineWidth = 2;
+    this.level.walls.forEach((w) => {
+      ctx.fillRect(w.x, w.y, w.w, w.h);
+      ctx.strokeRect(w.x, w.y, w.w, w.h);
+    });
+
+    // Draw Gates
+    this.level.gates.forEach((g) => {
+      ctx.fillStyle = g.color || '#38b000';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.fillRect(g.x, g.y, g.w, g.h);
+      ctx.strokeRect(g.x, g.y, g.w, g.h);
+    });
+
+    // Draw Pressure Plates
+    this.level.pressurePlates.forEach((p) => {
+      ctx.fillStyle = '#142c2c';
+      ctx.strokeStyle = '#00f5d4';
+      ctx.lineWidth = 2;
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+      ctx.strokeRect(p.x, p.y, p.w, p.h);
+      ctx.fillStyle = '#00f5d4';
+      ctx.font = '10px monospace';
+      ctx.fillText('PLATE', p.x + 2, p.y + p.h / 2 + 3);
+    });
+
+    // Draw Crates
+    this.level.crates.forEach((c) => {
+      ctx.fillStyle = '#6c584c';
+      ctx.strokeStyle = '#adc178';
+      ctx.lineWidth = 2;
+      ctx.fillRect(c.x, c.y, c.w, c.h);
+      ctx.strokeRect(c.x, c.y, c.w, c.h);
+      ctx.beginPath();
+      ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + c.w, c.y + c.h);
+      ctx.moveTo(c.x + c.w, c.y); ctx.lineTo(c.x, c.y + c.h);
+      ctx.stroke();
+    });
+
+    // Draw Mirrors
+    this.level.mirrors.forEach((m) => {
+      ctx.save();
+      ctx.translate(m.x, m.y);
+      ctx.rotate(m.angle || 0);
+      ctx.fillStyle = '#00f5d4';
+      ctx.fillRect(-18, -4, 36, 8);
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(-18, -4, 36, 8);
+      ctx.restore();
+    });
+
+    // Draw Prisms
+    this.level.prisms.forEach((p) => {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.strokeStyle = '#ff0055';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y - 18);
+      ctx.lineTo(p.x - 16, p.y + 14);
+      ctx.lineTo(p.x + 16, p.y + 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    // Draw Light Sources
+    this.level.lightSources.forEach((ls) => {
+      ctx.save();
+      ctx.fillStyle = '#ffb830';
+      ctx.shadowColor = '#ffb830';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(ls.x, ls.y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      if (ls.fov < Math.PI * 2) {
+        ctx.strokeStyle = '#ffb830';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(ls.x, ls.y);
+        ctx.lineTo(ls.x + Math.cos(ls.angle) * 36, ls.y + Math.sin(ls.angle) * 36);
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
+
+    // Draw Guards
+    this.level.guards.forEach((g) => {
+      ctx.fillStyle = g.type === 'LUMEN' ? '#3a86ff' : '#7209b7';
+      ctx.beginPath();
+      ctx.arc(g.x, g.y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      if (g.patrol && g.patrol.length > 1) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(g.patrol[0].x, g.patrol[0].y);
+        ctx.lineTo(g.patrol[1].x, g.patrol[1].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+
+    // Draw Bonus Diamonds
+    this.level.bonusDiamonds.forEach((d) => {
+      ctx.fillStyle = '#70e000';
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y - 9);
+      ctx.lineTo(d.x + 7, d.y);
+      ctx.lineTo(d.x, d.y + 9);
+      ctx.lineTo(d.x - 7, d.y);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    // Draw Spawns, Loot, Exit
+    // Lightwalker Start (☀️ Sol)
+    ctx.fillStyle = '#ffb830';
+    ctx.beginPath();
+    ctx.arc(this.level.lightStart.x, this.level.lightStart.y, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.font = '12px Outfit';
+    ctx.fillText('☀️', this.level.lightStart.x - 8, this.level.lightStart.y + 4);
+
+    // Shadowweaver Start (🌙 Umbra)
+    ctx.fillStyle = '#9d4edd';
+    ctx.beginPath();
+    ctx.arc(this.level.shadowStart.x, this.level.shadowStart.y, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Outfit';
+    ctx.fillText('🌙', this.level.shadowStart.x - 8, this.level.shadowStart.y + 4);
+
+    // Loot
+    ctx.fillStyle = '#00f5d4';
+    ctx.beginPath();
+    ctx.arc(this.level.loot.x, this.level.loot.y, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.font = '10px Outfit';
+    ctx.fillText('💎', this.level.loot.x - 6, this.level.loot.y + 4);
+
+    // Exit Portal
+    ctx.strokeStyle = '#38b000';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(this.level.exit.x, this.level.exit.y, 24, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.font = '10px Outfit';
+    ctx.fillStyle = '#38b000';
+    ctx.fillText('EXIT', this.level.exit.x - 12, this.level.exit.y + 4);
+
+    // Drag-to-create preview rectangle
+    if (this.isDragging) {
+      const minX = Math.min(this.dragStart.x, this.dragCurrent.x);
+      const minY = Math.min(this.dragStart.y, this.dragCurrent.y);
+      const w = Math.max(20, Math.abs(this.dragCurrent.x - this.dragStart.x));
+      const h = Math.max(20, Math.abs(this.dragCurrent.y - this.dragStart.y));
+      ctx.strokeStyle = this.activeTool === 'gate' ? '#38b000' : '#00f5d4';
+      ctx.fillStyle = 'rgba(0, 245, 212, 0.2)';
+      ctx.setLineDash([5, 5]);
+      ctx.lineWidth = 2;
+      ctx.fillRect(minX, minY, w, h);
+      ctx.strokeRect(minX, minY, w, h);
+      ctx.setLineDash([]);
     }
   }
 }

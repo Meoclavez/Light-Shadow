@@ -119,10 +119,14 @@
         e.preventDefault();
         this.noteTouch(e);
         this.requestTiltPermissionIfPending();
-        // Floating stick: the base jumps under the thumb (kept inside the zone)
+        // Fixed or floating joystick mode
         const rect = zone.getBoundingClientRect();
-        const cx = Math.min(Math.max(e.clientX, rect.left + JOY_RADIUS), rect.right - JOY_RADIUS);
-        const cy = Math.min(Math.max(e.clientY, rect.top + JOY_RADIUS), rect.bottom - JOY_RADIUS);
+        let cx = Math.min(Math.max(e.clientX, rect.left + JOY_RADIUS), rect.right - JOY_RADIUS);
+        let cy = Math.min(Math.max(e.clientY, rect.top + JOY_RADIUS), rect.bottom - JOY_RADIUS);
+        if (this.settings.joystickType === 'fixed') {
+          cx = rect.left + rect.width / 2;
+          cy = rect.top + rect.height / 2;
+        }
         Object.assign(this.joy, { active: true, pointerId: e.pointerId, cx, cy });
         base.style.left = `${cx - rect.left}px`;
         base.style.top = `${cy - rect.top}px`;
@@ -247,9 +251,11 @@
     syncSettingsUI() {
       const s = this.settings;
       const mark = (groupId, value) => {
-        this.$(groupId).querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.value === value));
+        const el = this.$(groupId);
+        if (el) el.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.value === value));
       };
       mark('set-touch', s.touchControls);
+      mark('set-joy-type', s.joystickType || 'floating');
       mark('set-tilt-sens', s.tiltSensitivity);
       this.$('set-tilt').checked = !!s.tilt;
       this.$('set-lefty').checked = !!s.leftHanded;
@@ -271,12 +277,15 @@
       });
 
       const segmented = (groupId, key) => {
-        this.$(groupId).querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+        const el = this.$(groupId);
+        if (!el) return;
+        el.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
           this.settings[key] = b.dataset.value;
           this.save();
         }));
       };
       segmented('set-touch', 'touchControls');
+      segmented('set-joy-type', 'joystickType');
       segmented('set-tilt-sens', 'tiltSensitivity');
 
       this.$('set-tilt').addEventListener('change', async (e) => {
