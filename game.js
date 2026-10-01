@@ -665,8 +665,15 @@ class LightShadowEngine {
     this.currentLevelIndex = 0;
     this.activeCharacter = 'LIGHT'; // 'LIGHT' or 'SHADOW'
 
-    this.lightChar = { x: 0, y: 0, radius: 14 };
-    this.shadowChar = { x: 0, y: 0, radius: 14 };
+    this.lightChar = { x: 0, y: 0, radius: 14, facing: 1, isMoving: false, walkCycle: 0 };
+    this.shadowChar = { x: 0, y: 0, radius: 14, facing: 1, isMoving: false, walkCycle: 0 };
+
+    this.charSprites = {
+      light: new Image(),
+      shadow: new Image()
+    };
+    this.charSprites.light.src = 'assets/char_light.png';
+    this.charSprites.shadow.src = 'assets/char_shadow.png';
 
     this.historyStack = [];
     this.lastDistPushed = 0;
@@ -1163,8 +1170,14 @@ class LightShadowEngine {
 
     this.lightChar.x = lvl.lightStart.x;
     this.lightChar.y = lvl.lightStart.y;
+    this.lightChar.facing = 1;
+    this.lightChar.isMoving = false;
+    this.lightChar.walkCycle = 0;
     this.shadowChar.x = lvl.shadowStart.x;
     this.shadowChar.y = lvl.shadowStart.y;
+    this.shadowChar.facing = 1;
+    this.shadowChar.isMoving = false;
+    this.shadowChar.walkCycle = 0;
 
     this.walls = deepCopy(lvl.walls);
     this.lightSources = deepCopy(lvl.lightSources).map((ls) => ({ ...ls, baseAngle: ls.angle, time: 0 }));
@@ -1313,8 +1326,8 @@ class LightShadowEngine {
       this.historyStack.pop(); // Pop current
       const state = this.historyStack[this.historyStack.length - 1];
       this.activeCharacter = state.active;
-      this.lightChar = { ...state.light };
-      this.shadowChar = { ...state.shadow };
+      this.lightChar = { ...this.lightChar, ...state.light };
+      this.shadowChar = { ...this.shadowChar, ...state.shadow };
       this.mirrors = deepCopy(state.mirrors);
       this.crates = deepCopy(state.crates);
       if (state.gates) this.gates.forEach((g, i) => { g.open = !!state.gates[i]; });
@@ -1384,6 +1397,10 @@ class LightShadowEngine {
 
     // 3. Raycast & Calculate Light Polygons
     this.calculateLighting();
+
+    // Reset motion flags each frame before movement
+    this.lightChar.isMoving = false;
+    this.shadowChar.isMoving = false;
 
     // 4. Move Active Character (with smooth wall sliding & crate pushing)
     this.handleMovement(dt);
@@ -1499,6 +1516,11 @@ class LightShadowEngine {
     }
 
     if (moved) {
+      if (dx < -0.05) currChar.facing = -1;
+      else if (dx > 0.05) currChar.facing = 1;
+      currChar.isMoving = true;
+      currChar.walkCycle = (currChar.walkCycle || 0) + dt * 10;
+
       // Push discrete history checkpoints every ~50px of movement
       this.lastDistPushed += speed;
       if (this.lastDistPushed > 50) {
@@ -2285,39 +2307,88 @@ class LightShadowEngine {
     this.ctx.fillStyle = '#fff';
     this.ctx.fillText(exitOpen ? 'EXIT' : '🔒 EXIT', this.exit.x - (exitOpen ? 12 : 20), this.exit.y + 4);
 
-    // 13. Draw Characters (pulsing ring marks the soul you control)
-    const active = this.activeCharacter === 'LIGHT' ? this.lightChar : this.shadowChar;
-    this.ctx.strokeStyle = this.activeCharacter === 'LIGHT' ? 'rgba(255, 184, 48, 0.6)' : 'rgba(157, 78, 221, 0.7)';
-    this.ctx.lineWidth = 2;
-    this.ctx.beginPath();
-    this.ctx.arc(active.x, active.y, active.radius + 6 + Math.sin(this.animTime * 5) * 2, 0, Math.PI * 2);
-    this.ctx.stroke();
-
-    // Lightwalker (Golden Aura)
-    this.ctx.shadowColor = '#ffb830';
-    this.ctx.shadowBlur = this.activeCharacter === 'LIGHT' ? 20 : 5;
-    this.ctx.fillStyle = '#ffb830';
-    this.ctx.beginPath();
-    this.ctx.arc(this.lightChar.x, this.lightChar.y, this.lightChar.radius, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.fillStyle = '#000';
-    this.ctx.font = '11px Outfit';
-    this.ctx.fillText('☀️', this.lightChar.x - 7, this.lightChar.y + 5);
-
-    // Shadowweaver (Purple Aura)
-    this.ctx.shadowColor = '#9d4edd';
-    this.ctx.shadowBlur = this.activeCharacter === 'SHADOW' ? 20 : 5;
-    this.ctx.fillStyle = '#9d4edd';
-    this.ctx.beginPath();
-    this.ctx.arc(this.shadowChar.x, this.shadowChar.y, this.shadowChar.radius, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.fillStyle = '#fff';
-    this.ctx.fillText('🌙', this.shadowChar.x - 7, this.shadowChar.y + 5);
-
-    this.ctx.shadowBlur = 0;
+    // 13. Draw Characters (Light & Shadow rogues matching poster reference with dynamic auras and facing)
+    this.drawCharacter(this.lightChar, 'LIGHT');
+    this.drawCharacter(this.shadowChar, 'SHADOW');
   }
 
-  drawGrid() {
+  drawCharacter(char, type) {
+    const isLight = type === 'LIGHT';
+    const isActive = this.activeCharacter === type;
+    const sprite = isLight ? this.charSprites.light : this.charSprites.shadow;
+    const facing = char.facing || 1;
+
+    const isMoving = !!char.isMoving;
+    const idleBob = Math.sin(this.animTime * 3) * 1.5;
+    const walkBob = isMoving ? Math.abs(Math.sin(char.walkCycle || 0)) * 2.5 : 0;
+    const walkTilt = isMoving ? Math.sin(char.walkCycle || 0) * 0.06 : 0;
+    const bob = isMoving ? -walkBob : idleBob;
+
+    this.ctx.save();
+
+    // 1. Soft Floor Contact Shadow
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    this.ctx.beginPath();
+    this.ctx.ellipse(char.x, char.y + 11, 16, 6, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // 2. Active Soul Pedestal / Selection Aura Ring
+    if (isActive) {
+      const pulse = Math.sin(this.animTime * 4.5) * 2;
+      const ringColor = isLight ? 'rgba(255, 184, 48, 0.85)' : 'rgba(175, 82, 222, 0.9)';
+      const glowColor = isLight ? '#ffb830' : '#af52de';
+
+      this.ctx.save();
+      this.ctx.shadowColor = glowColor;
+      this.ctx.shadowBlur = 12;
+      this.ctx.strokeStyle = ringColor;
+      this.ctx.lineWidth = 2.5;
+      this.ctx.beginPath();
+      this.ctx.ellipse(char.x, char.y + 11, 18 + pulse, 7 + pulse * 0.4, 0, 0, Math.PI * 2);
+      this.ctx.stroke();
+
+      // Rotating runic dashes around active character
+      this.ctx.setLineDash([4, 6]);
+      this.ctx.lineDashOffset = -this.animTime * 20;
+      this.ctx.strokeStyle = isLight ? 'rgba(255, 230, 150, 0.65)' : 'rgba(230, 180, 255, 0.75)';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.beginPath();
+      this.ctx.ellipse(char.x, char.y + 11, 23 + pulse * 0.5, 9 + pulse * 0.2, 0, 0, Math.PI * 2);
+      this.ctx.stroke();
+      this.ctx.restore();
+    }
+
+    // 3. Draw Character Sprite
+    const spriteW = 36;
+    const spriteH = 48;
+
+    this.ctx.translate(char.x, char.y + 11 + bob);
+    this.ctx.scale(facing, 1);
+    this.ctx.rotate(walkTilt);
+
+    if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+      if (isActive) {
+        this.ctx.shadowColor = isLight ? '#ffb830' : '#af52de';
+        this.ctx.shadowBlur = 14;
+      }
+      this.ctx.drawImage(sprite, -spriteW / 2, -spriteH + 3, spriteW, spriteH);
+    } else {
+      // Clean fallback while sprite is loading
+      this.ctx.shadowColor = isLight ? '#ffb830' : '#9d4edd';
+      this.ctx.shadowBlur = isActive ? 20 : 5;
+      this.ctx.fillStyle = isLight ? '#ffb830' : '#9d4edd';
+      this.ctx.beginPath();
+      this.ctx.arc(0, -14, 14, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.fillStyle = isLight ? '#000' : '#fff';
+      this.ctx.font = '11px Outfit';
+      this.ctx.fillText(isLight ? '☀️' : '🌙', -6, -10);
+    }
+
+    this.ctx.restore();
+  }
+
+    drawGrid() {
     this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     this.ctx.lineWidth = 1;
     for (let x = 0; x < this.canvas.width; x += 40) {
@@ -2885,23 +2956,33 @@ class LevelEditor {
     });
 
     // Draw Spawns, Loot, Exit
-    // Lightwalker Start (☀️ Sol)
-    ctx.fillStyle = '#ffb830';
-    ctx.beginPath();
-    ctx.arc(this.level.lightStart.x, this.level.lightStart.y, 15, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#000';
-    ctx.font = '12px Outfit';
-    ctx.fillText('☀️', this.level.lightStart.x - 8, this.level.lightStart.y + 4);
+    // Lightwalker Start
+    const lightSp = this.engine && this.engine.charSprites ? this.engine.charSprites.light : null;
+    if (lightSp && lightSp.complete && lightSp.naturalWidth > 0) {
+      ctx.drawImage(lightSp, this.level.lightStart.x - 17, this.level.lightStart.y - 32, 34, 45);
+    } else {
+      ctx.fillStyle = '#ffb830';
+      ctx.beginPath();
+      ctx.arc(this.level.lightStart.x, this.level.lightStart.y, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.font = '12px Outfit';
+      ctx.fillText('☀️', this.level.lightStart.x - 8, this.level.lightStart.y + 4);
+    }
 
-    // Shadowweaver Start (🌙 Umbra)
-    ctx.fillStyle = '#9d4edd';
-    ctx.beginPath();
-    ctx.arc(this.level.shadowStart.x, this.level.shadowStart.y, 15, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '12px Outfit';
-    ctx.fillText('🌙', this.level.shadowStart.x - 8, this.level.shadowStart.y + 4);
+    // Shadowweaver Start
+    const shadowSp = this.engine && this.engine.charSprites ? this.engine.charSprites.shadow : null;
+    if (shadowSp && shadowSp.complete && shadowSp.naturalWidth > 0) {
+      ctx.drawImage(shadowSp, this.level.shadowStart.x - 17, this.level.shadowStart.y - 32, 34, 45);
+    } else {
+      ctx.fillStyle = '#9d4edd';
+      ctx.beginPath();
+      ctx.arc(this.level.shadowStart.x, this.level.shadowStart.y, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px Outfit';
+      ctx.fillText('🌙', this.level.shadowStart.x - 8, this.level.shadowStart.y + 4);
+    }
 
     // Loot
     ctx.fillStyle = '#00f5d4';

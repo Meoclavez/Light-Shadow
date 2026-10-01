@@ -92,7 +92,10 @@
         this.swapSoul = this.engine.activeCharacter;
         const btn = this.$('touch-swap');
         btn.classList.toggle('shadow', this.swapSoul === 'SHADOW');
-        btn.querySelector('.touch-icon').textContent = this.swapSoul === 'LIGHT' ? '☀️' : '🌙';
+        const icon = btn.querySelector('.touch-icon');
+        if (icon) {
+          icon.innerHTML = `<img src="assets/char_${this.swapSoul === 'LIGHT' ? 'light' : 'shadow'}.png" alt="${this.swapSoul}" class="touch-avatar-img" />`;
+        }
       }
     }
 
