@@ -42,6 +42,10 @@
           <span class="icon">💎</span>
           <span class="text">LOOT: 0/1</span>
         </div>
+        <div class="pill diamond-pill" id="diamond-status" title="Bonus data diamonds in this mission">
+          <span class="icon">✨</span>
+          <span class="text">BONUS: 0/3</span>
+        </div>
         <div class="pill timer-pill" id="timer-status" title="Elapsed time / target time">
           <span class="icon">⏱️</span>
           <span class="text">0:00.0 / 0:30.0</span>
@@ -57,6 +61,9 @@
           <span class="player-avatar">👤</span>
           <span id="player-name" class="player-name">Guest</span>
         </div>
+        <button id="btn-briefing" class="icon-btn" title="Mission Briefing & Intel (I)">📜</button>
+        <button id="btn-achievements" class="icon-btn" title="Heist Trophies & Achievements">🏆</button>
+        <button id="btn-editor" class="icon-btn" title="Custom Heist Workshop & Level Editor">🛠️</button>
         <button id="btn-pause" class="icon-btn" title="Pause (P / Esc)">⏸️</button>
         <button id="btn-settings" class="icon-btn" title="Settings (controls, tilt, vibration)">⚙️</button>
         <button id="btn-fullscreen" class="icon-btn touch-only" title="Full screen">⛶</button>
@@ -80,9 +87,9 @@
       <aside class="sidebar-panel left-panel">
         <div class="card character-card" id="card-light">
           <div class="char-header">
-            <div class="char-avatar light-avatar">☀️</div>
+            <div class="char-avatar light-avatar"><img src="assets/char_light.png" alt="Lightwalker" class="avatar-img" /></div>
             <div class="char-info">
-              <h3>LIGHTWALKER</h3>
+              <h3>LIGHT</h3>
               <span class="badge light-badge">LIGHT ONLY</span>
             </div>
           </div>
@@ -91,9 +98,9 @@
 
         <div class="card character-card" id="card-shadow">
           <div class="char-header">
-            <div class="char-avatar shadow-avatar">🌙</div>
+            <div class="char-avatar shadow-avatar"><img src="assets/char_shadow.png" alt="Shadowweaver" class="avatar-img" /></div>
             <div class="char-info">
-              <h3>SHADOWWEAVER</h3>
+              <h3>SHADOW</h3>
               <span class="badge shadow-badge">DARK ONLY</span>
             </div>
           </div>
@@ -152,7 +159,7 @@
         <div class="touch-buttons">
           <button id="touch-undo" class="touch-btn small" aria-label="Undo step"><span class="touch-icon">↩️</span><span class="touch-label">UNDO</span></button>
           <button id="touch-rotate" class="touch-btn small" aria-label="Rotate mirror"><span class="touch-icon">🪞</span><span class="touch-label">ROTATE</span></button>
-          <button id="touch-swap" class="touch-btn swap" aria-label="Swap soul"><span class="touch-icon">☀️</span><span class="touch-label">SWAP</span></button>
+          <button id="touch-swap" class="touch-btn swap" aria-label="Swap soul"><span class="touch-icon"><img src="assets/char_light.png" alt="Light" class="touch-avatar-img" /></span><span class="touch-label">SWAP</span></button>
         </div>
       </div>
     </main>
@@ -166,7 +173,7 @@
         </div>
         <div class="level-grid" id="level-grid"></div>
         <div class="modal-footer">
-          <span id="total-stars" class="total-stars">★ 0 / 12</span>
+          <span id="total-stars" class="total-stars">★ 0 / 18</span>
           <span class="modal-hint">Beat a mission's target time without rewinding for ★★★. Clear a mission to unlock the next.</span>
           <button id="btn-reset-progress" class="btn secondary">Reset Progress</button>
         </div>
@@ -190,6 +197,15 @@
             </div>
             <div class="segmented" id="set-touch">
               <button data-value="auto">Auto</button><button data-value="on">On</button><button data-value="off">Off</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-name">Joystick Position</span>
+              <span class="setting-hint">Dynamic floating under thumb, or fixed in corner.</span>
+            </div>
+            <div class="segmented" id="set-joy-type">
+              <button data-value="floating">Floating</button><button data-value="fixed">Fixed</button>
             </div>
           </div>
           <div class="setting-row">
@@ -238,6 +254,111 @@
             <li><strong>SWAP</strong> switches souls, <strong>ROTATE</strong> turns a nearby mirror (it glows when one is in reach), <strong>UNDO</strong> rewinds a step.</li>
             <li>⏸️ pauses, ⛶ goes full screen. Landscape gives the biggest view.</li>
           </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Story / Mission Briefing Modal -->
+    <div id="briefing-modal" class="modal hidden">
+      <div class="modal-content glass-panel briefing-content">
+        <div class="modal-header">
+          <h2>MISSION INTEL &amp; BRIEFING</h2>
+          <button id="btn-close-briefing" class="close-btn" aria-label="Close briefing">&times;</button>
+        </div>
+        <div class="briefing-body">
+          <div class="dialogue-box">
+            <div class="dialogue-speaker speaker-sol">
+              <div class="speaker-avatar"><img src="assets/char_light.png" alt="Sol" class="avatar-img-sm" /></div>
+              <div class="speaker-meta">
+                <strong class="speaker-name">SOL</strong>
+                <span class="speaker-role">Lightwalker</span>
+              </div>
+            </div>
+            <p id="briefing-sol-text" class="dialogue-text">"Vault diagnostics indicate heavy security ahead. Keep your eyes sharp."</p>
+          </div>
+          <div class="dialogue-box">
+            <div class="dialogue-speaker speaker-umbra">
+              <div class="speaker-avatar"><img src="assets/char_shadow.png" alt="Umbra" class="avatar-img-sm" /></div>
+              <div class="speaker-meta">
+                <strong class="speaker-name">UMBRA</strong>
+                <span class="speaker-role">Shadowweaver</span>
+              </div>
+            </div>
+            <p id="briefing-umbra-text" class="dialogue-text">"They think shadows are blind spots. Let's show them what lurks in the dark."</p>
+          </div>
+          <div class="intel-card">
+            <h4>SECURITY BLUEPRINT INTEL</h4>
+            <p id="briefing-intel-text">Target: Sector Vault. Avoid guard vision cones and beware of forbidden terrain.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-start-briefing" class="btn primary full-width">Begin Infiltration ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievements Modal -->
+    <div id="achievements-modal" class="modal hidden">
+      <div class="modal-content glass-panel achievements-content">
+        <div class="modal-header">
+          <h2>HEIST TROPHIES &amp; ACHIEVEMENTS</h2>
+          <button id="btn-close-achievements" class="close-btn" aria-label="Close achievements">&times;</button>
+        </div>
+        <div class="achievements-summary">
+          <span id="achievements-count" class="achievements-count">🏆 0 / 10 Unlocked</span>
+          <div class="achievement-progress-bar"><div id="achievement-bar-fill" class="achievement-bar-fill"></div></div>
+        </div>
+        <div class="achievements-grid" id="achievements-grid"></div>
+      </div>
+    </div>
+
+    <!-- Custom Heist Workshop / Level Editor Modal -->
+    <div id="editor-modal" class="modal hidden">
+      <div class="modal-content glass-panel editor-content">
+        <div class="modal-header">
+          <h2>CUSTOM HEIST WORKSHOP</h2>
+          <button id="btn-close-editor" class="close-btn" aria-label="Close editor">&times;</button>
+        </div>
+        <div class="editor-toolbar">
+          <div class="editor-tool-group">
+            <span class="tool-label">ENTITIES &amp; OPTICS</span>
+            <div class="tool-buttons" id="editor-tools">
+              <button class="tool-btn active" data-tool="wall" title="Wall barrier">🧱 Wall</button>
+              <button class="tool-btn" data-tool="spotlight" title="Spotlight source">☀️ Spotlight</button>
+              <button class="tool-btn" data-tool="lamp" title="360° Omnidirectional Lamp">💡 Lamp</button>
+              <button class="tool-btn" data-tool="mirror" title="Reflective mirror">🪞 Mirror</button>
+              <button class="tool-btn" data-tool="prism" title="Refractive prism (splits light)">🔺 Prism</button>
+              <button class="tool-btn" data-tool="plate" title="Pressure Plate switch">🔘 Plate</button>
+              <button class="tool-btn" data-tool="gate" title="Security Gate">🚪 Gate</button>
+              <button class="tool-btn" data-tool="crate" title="Pushable crate">📦 Crate</button>
+              <button class="tool-btn" data-tool="guard_lumen" title="Lumen Patrol Guard">👮 Lumen</button>
+              <button class="tool-btn" data-tool="guard_nyx" title="Nyx Night-Vision Guard">🥷 Nyx</button>
+              <button class="tool-btn" data-tool="diamond" title="Bonus Data Diamond">✨ Diamond</button>
+              <button class="tool-btn" data-tool="light_start" title="Lightwalker Spawn">☀️ Sol</button>
+              <button class="tool-btn" data-tool="shadow_start" title="Shadowweaver Spawn">🌙 Umbra</button>
+              <button class="tool-btn" data-tool="loot" title="Vault Loot">💎 Loot</button>
+              <button class="tool-btn" data-tool="exit" title="Exit Twilight Portal">🌀 Exit</button>
+              <button class="tool-btn delete-tool" data-tool="erase" title="Erase item under click">❌ Erase</button>
+            </div>
+          </div>
+          <div class="editor-settings-bar">
+            <label class="editor-field">
+              <span>Title</span>
+              <input type="text" id="editor-level-title" value="My Custom Infiltration" maxlength="30">
+            </label>
+            <label class="editor-field">
+              <span>Par Time (s)</span>
+              <input type="number" id="editor-level-par" value="45" min="10" max="300">
+            </label>
+            <button id="btn-editor-clear" class="btn secondary">🗑️ Clear</button>
+            <button id="btn-editor-export" class="btn secondary">💾 Export Code</button>
+            <button id="btn-editor-import" class="btn secondary">📂 Import Code</button>
+            <button id="btn-editor-play" class="btn primary">▶️ Playtest Heist</button>
+          </div>
+        </div>
+        <div class="editor-canvas-wrap">
+          <canvas id="editorCanvas" width="900" height="650"></canvas>
+          <div id="editor-tooltip" class="editor-tooltip">Click on grid to place. Right-click or select Erase to remove.</div>
         </div>
       </div>
     </div>

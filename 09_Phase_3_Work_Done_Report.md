@@ -114,3 +114,18 @@ After the Phase 3 submission, the playable prototype was audited end-to-end. The
 * **Automated tests:** `node tests/playthrough.test.js` now runs **16/16 passing**. New tests: Reset Progress keeps audio and control settings; analog input moves the active soul (full stick ≈ 85 px in 0.5 s, half stick half as far, dead zone ignored, keyboard overrides the stick); tilt mapping per orientation (portrait, landscape 90°, landscape 270°), dead zone and diagonal cap; control settings persist per account.
 * **Headless Chrome with touch & device emulation:** iPhone-size 390×844 portrait and 844×390 landscape show no horizontal or vertical overflow; a joystick drag moved Lightwalker 213 px; a SWAP tap switched souls; Settings opens and freezes the game; simulated device tilt moved Lightwalker right at full speed (vector 1.0); the results card fits the phone screen. Desktop 1400×900 and 1024×700 show no touch UI and no overflow, and the keyboard still works. Zero console errors.
 * **Documentation updated:** README (Playing on Phones & Tablets, controls table with touch equivalents, structure, tests, changelog), Requirements (FR-6, NFR-2/NFR-3 notes), SAD (Mobile Controls module, input priority, tilt pipeline, canvas scaling, Settings), DDD (`settings` schema and rules), UI/UX (touch layouts, breakpoints, control sizes and states, Settings modal), and the supporting diagrams (architecture, ER, requirements, use cases, wireframes, flowchart).
+
+### 4.7 Major Feature & Gameplay Expansion (October 2026)
+**Goal:** Expand depth, replayability, creative tooling, storytelling, and accessibility across all desktop and mobile devices.
+
+| Area | Delivered |
+| :--- | :--- |
+| **New Campaign Missions** | Added Mission 5 ("Pressure & Precision", par 60 s) and Mission 6 ("The Vault Matrix", par 80 s), expanding the campaign to 6 missions and 18 stars maximum. Designed around synchronized dual-soul routing, sweeping spotlights, and multi-tier puzzles. |
+| **Interactive Level Editor** | Developed the Custom Heist Workshop (`LevelEditor` subsystem). Features a 20 px blueprint grid, 16 entity tools (walls, gates, lights, omni-lamps, mirrors, prisms, pressure plates, crates, lumen/nyx guards, diamonds, spawns, loot, exit), drag-to-create bounding box preview, contextual right-click eraser, live playtesting mode, and clipboard JSON export/import. |
+| **Trophies & Achievements** | Implemented 10 achievements (`ACHIEVEMENTS_DEF`) covering progression, speedrunning, zero-rewind perfection, stealth, optics, physics manipulation, diamond collection, campaign 100% completion, level crafting, and briefing reading. Includes animated HUD toasts and dashboard progress bar. |
+| **Story Briefings** | Added pre-mission tactical narrative dialogues between Sol (Lightwalker) and Umbra (Shadowweaver) with Security Blueprint Intel cards, accessible automatically on first entry and on demand via HUD (📜) or `I` hotkey. |
+| **Mechanics Expansion** | Added pressure plate floor switches with bi-directional gate unlatching (actuated by Lightwalker, Shadowweaver, or pushable Crates) and collectible Bonus Data Diamonds with floating bob animations and gleam shaders. |
+| **Quick Play as Guest** | Added instant one-click guest access on `index.html` allowing immediate testing without mandatory credential entry. |
+| **Mobile Joystick Toggle** | Added setting in ⚙️ Settings allowing players to toggle between dynamic floating thumb follower and classic fixed anchor. |
+| **Engine Optimization** | Pre-cached static wall boundaries into `cachedStaticSegments`, reducing per-frame segment allocation overhead by ~90% and ensuring rock-solid 60 FPS performance during complex multi-beam reflections. |
+

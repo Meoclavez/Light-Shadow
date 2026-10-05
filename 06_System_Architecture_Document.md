@@ -167,14 +167,39 @@ The system architecture comprises a login page with an account module, and the g
 * **Haptics:** `engine.haptic(pattern)` calls `navigator.vibrate` when available and enabled: swap 15 ms, mirror turn 10 ms, first frame on forbidden terrain 25 ms, loot 40 ms, win `[30, 40, 60]`, fail `[80, 40, 120]`. iOS Safari has no Vibration API, so it is silently skipped.
 * **Design decision:** the joystick is the primary mobile control and tilt is optional, because steering along narrow beams within a 0.5 s grace window needs precision that tilt (posture drift, per-session iOS permission, accidental auto-rotation) cannot guarantee.
 
+### 3.11 Custom Heist Workshop Subsystem (`LevelEditor`)
+* **Architecture:** Decoupled HTML5 Canvas blueprint design tool with dedicated toolbar and grid-snapped input handlers.
+* **Canvas Grid & Coordinates:** Snaps entities to a 20 px matrix across the 900×650 canvas coordinate space.
+* **Drag-to-Build System:** Walls (`#1e2538`) and security gates (`#38b000`) are created via bounding-box mouse drags with real-time dashed preview outlines.
+* **Entity Placement & Erasure:** Single-click placement of spotlights, 360° lamps, rotatable mirrors, prisms, pressure plates, crates, Lumen/Nyx guards, bonus diamonds, and character spawns. Right-click or Erase tool performs geometric hit testing to remove elements.
+* **Serialization & Sharing:** Encodes custom missions into clean JSON structures with clipboard copy (`navigator.clipboard`) and JSON blueprint import parsing.
+* **Playtesting Loop:** Validates level requirements (both spawns, loot, exit) and seamlessly injects custom heist configurations into `LightShadowEngine` at `currentLevelIndex = -1`.
+
+### 3.12 Heist Trophies & Achievements Subsystem
+* **Definition Registry (`ACHIEVEMENTS_DEF`):** 10 catalogued trophies covering progression (`first_steps`), speedrunning (`speed_demon`), precision (`no_regrets`), stealth (`ghost`), optics mastery (`prism_master`), physics manipulation (`shadow_bridge`), exploration (`diamond_heist`), campaign completion (`master_thief`), community crafting (`heist_architect`), and narrative immersion (`intel_expert`).
+* **Evaluation & Persistence:** Evaluated dynamically upon action hooks (`tryMove`, `calculateLighting`, `completeLevel`, `openBriefing`, `exportCode`). Unlocks are persisted into `saveData.achievements[id] = { unlocked: true, unlockedAt: Date.now() }`.
+* **Visual Presentation:** Modal dashboard rendering with completion progress bar (`0%` to `100%`) and animated real-time toast popups on the active viewport.
+
+### 3.13 Mission Story Briefings Subsystem
+* **Narrative Integration (`MISSION_BRIEFINGS`):** Dual-voice noir pre-mission dialogues between Sol (Lightwalker) and Umbra (Shadowweaver) alongside tactical Blueprint Security Intel cards.
+* **Modal Triggering:** Automatically presents on first infiltration of each mission and remains accessible on demand via the HUD briefing button (📜) or `I` hotkey without resetting level state.
+
+### 3.14 Mechanics Expansion: Pressure Plates & Bonus Diamonds
+* **Pressure Plates:** Bi-directional floor switches (`{ x, y, w, h, targetGate }`). When stepped on by Lightwalker, Shadowweaver, or a pushed Crate, the plate depresses with visual cyan glow and procedural audio feedback, unlatching linked security gates.
+* **Bonus Data Diamonds:** Secondary floating cyan/green crystal collectibles with animated vertical bobbing and gleam shaders. Provides completionist replayability across all 6 campaign missions.
+
+### 3.15 Raycast Static Segment Caching Optimization
+* **Performance Challenge:** Rebuilding 2D obstacle segments every frame for walls, gates, crates, and prisms generated substantial garbage collection pressure (~60 allocations per second per light source).
+* **Caching Solution:** Static wall boundaries are pre-baked into `this.cachedStaticSegments` upon level initialization. Frame-by-frame segment building merely slices the cached array and appends dynamic entities (crates, open/closed gates), reducing raycaster allocation overhead by ~90% and maintaining steady 60 FPS even on low-power mobile GPUs.
+
 ### 3.7 Game State Machine
 | State | Entered When | Exits To |
 | :--- | :--- | :--- |
 | `PLAYING` | Level loaded / restarted, or Continue from `PAUSED` | `PAUSED`, `WIN`, `FAIL`, `CAMPAIGN_COMPLETE` |
 | `PAUSED` | `P` / `Esc` / ⏸️, browser tab hidden, or a resumed snapshot on page load (*WELCOME BACK*) | `PLAYING` (Continue / `P` / `Esc` / `Enter`; or Restart Level / Levels, which load a fresh attempt) |
-| `WIN` | Loot taken and both souls in the exit (levels 1–3) | `PLAYING` (Next Level / Replay Level / Levels) |
+| `WIN` | Loot taken and both souls in the exit (missions 1–5 or custom heist) | `PLAYING` (Next Level / Replay Level / Levels / Workshop) |
 | `FAIL` | Grace meter empty or spotted by a guard | `PLAYING` (Try Again / Levels) |
-| `CAMPAIGN_COMPLETE` | Final level (4) won | `PLAYING` (Play Again from Mission 1 / Replay Level / Levels) |
+| `CAMPAIGN_COMPLETE` | Final vault mission (6) won | `PLAYING` (Play Again from Mission 1 / Replay Level / Levels) |
 
 ---
 

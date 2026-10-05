@@ -101,8 +101,9 @@ Player-side data (browser storage, one save slot per account):
 | `loot` | Object | Not Null | Location `{x, y}` and `taken` boolean status |
 | `exit` | Point `{x, y}` | Not Null | Level exit portal coordinates (twilight zone, radius 45 px) |
 | `desc` | String | Not Null | Short mission blurb shown on the Level Select card |
-| `objective` | String | Not Null | Objective banner text shown while the loot is not yet taken |
-| `parTime` | Float | Not Null, > 0 | Target (par) completion time in seconds (L1 25, L2 45, L3 45, L4 60); drives the star rating |
+| `parTime` | Float | Not Null, > 0 | Target (par) completion time in seconds (L1 25, L2 45, L3 45, L4 60, L5 60, L6 80); drives the star rating |
+| `pressurePlates` | Array | Optional | Floor switch objects `{x, y, w, h, targetGate}` |
+| `bonusDiamonds` | Array | Optional | Secondary data diamond objects `{x, y}` |
 
 ### 3.2 `LIGHT_SOURCE` Table / Object
 | Field Name | Data Type | Constraints | Description |
@@ -159,13 +160,19 @@ Player progression is cached locally using standard JSON serialization. Each sig
 
 ```json
 {
-  "unlockedLevelIndex": 1,
-  "lastLevelIndex": 1,
+  "unlockedLevelIndex": 2,
+  "lastLevelIndex": 2,
   "highScores": {
-    "level_0": { "completed": true, "bestTimeSeconds": 14.2, "stars": 3 }
+    "level_0": { "completed": true, "bestTimeSeconds": 14.2, "stars": 3 },
+    "level_1": { "completed": true, "bestTimeSeconds": 36.2, "stars": 2 }
   },
+  "achievements": {
+    "first_steps": { "unlocked": true, "unlockedAt": 1759300000000 },
+    "speed_demon": { "unlocked": true, "unlockedAt": 1759300020000 }
+  },
+  "customLevels": [],
   "inProgress": {
-    "levelIndex": 1,
+    "levelIndex": 2,
     "levelTime": 12.4,
     "rewindsUsed": 0,
     "activeCharacter": "SHADOW",
@@ -174,6 +181,8 @@ Player progression is cached locally using standard JSON serialization. Each sig
     "mirrors": [],
     "crates": [],
     "gates": [],
+    "pressurePlates": [false],
+    "bonusDiamonds": [false, false],
     "guards": [
       { "x": 380, "y": 120, "dir": 1, "angle": 1.57, "stunTimer": 0 },
       { "x": 760, "y": 400, "dir": 0, "angle": -1.57, "stunTimer": 0 }
@@ -188,6 +197,7 @@ Player progression is cached locally using standard JSON serialization. Each sig
   },
   "settings": {
     "touchControls": "auto",
+    "joystickType": "floating",
     "tilt": false,
     "tiltSensitivity": "medium",
     "leftHanded": false,
@@ -198,9 +208,11 @@ Player progression is cached locally using standard JSON serialization. Each sig
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `unlockedLevelIndex` | Integer (0–3) | Highest unlocked mission index (clamped to the valid range on load) |
+| `unlockedLevelIndex` | Integer (0–5) | Highest unlocked mission index (clamped to the valid range on load) |
 | `lastLevelIndex` | Integer or `null` | Mission to open next time: set on every fresh level load; after a win, the next mission (0 after the final win) |
 | `highScores` | Object `level_N → {completed, bestTimeSeconds, stars}` | Per-mission best result (see §4.1) |
+| `achievements` | Object `id → {unlocked, unlockedAt}` | Trophies and unlock timestamps |
+| `customLevels` | Array of Level Objects | User-crafted custom heist blueprints |
 | `inProgress` | Snapshot object or `null` | Mid-level snapshot for "continue where you left off" (§4.2) |
 | `audioSettings.muted` | Boolean | 🔊 master mute |
 | `audioSettings.volume` | Float 0–1 | Master volume (default 0.8) |
@@ -209,7 +221,7 @@ Player progression is cached locally using standard JSON serialization. Each sig
 #### `inProgress` Snapshot Fields
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `levelIndex` | Integer | Mission being played |
+| `levelIndex` | Integer | Mission being played (-1 for custom level) |
 | `levelTime` | Float (s, 0.01 precision) | Elapsed mission time |
 | `rewindsUsed` | Integer | Rewinds so far (affects ★★★) |
 | `activeCharacter` | `'LIGHT'` / `'SHADOW'` | Soul in control |
@@ -217,6 +229,8 @@ Player progression is cached locally using standard JSON serialization. Each sig
 | `mirrors` | Array of Float | Mirror angles, in level order |
 | `crates` | Array of Point `{x, y}` | Crate positions, in level order |
 | `gates` | Array of Boolean | Gate `open` flags (latched), in level order |
+| `pressurePlates` | Array of Boolean | Pressure plate trigger states |
+| `bonusDiamonds` | Array of Boolean | Collected state of secondary diamonds |
 | `guards` | Array of `{x, y, dir, angle, stunTimer}` | Guard position, patrol index, facing and stun time left |
 | `lights` | Array of `{angle, time}` | Light-source angle and animation phase (rotating / pendulum lights) |
 | `lootTaken` | Boolean | Whether the loot has been stolen |
@@ -225,10 +239,10 @@ Player progression is cached locally using standard JSON serialization. Each sig
 ### 4.1 Persistence Rules
 | Rule | Behaviour |
 | :--- | :--- |
-| **Fresh profile** | `{"unlockedLevelIndex": 0, "lastLevelIndex": null, "highScores": {}, "inProgress": null, "audioSettings": {"muted": false, "volume": 0.8}, "settings": {"touchControls": "auto", "tilt": false, "tiltSensitivity": "medium", "leftHanded": false, "vibration": true}}` — only Mission 1 is playable. Each new account starts with a fresh profile. |
-| **When written** | On every level win and fail, on every fresh level load/restart, on mute toggle, on every Settings change, on **Reset Progress**, and whenever the snapshot is saved (§4.2). |
+| **Fresh profile** | `{"unlockedLevelIndex": 0, "lastLevelIndex": null, "highScores": {}, "achievements": {}, "customLevels": [], "inProgress": null, "audioSettings": {"muted": false, "volume": 0.8}, "settings": {"touchControls": "auto", "joystickType": "floating", "tilt": false, "tiltSensitivity": "medium", "leftHanded": false, "vibration": true}}` — only Mission 1 is playable. Each new account starts with a fresh profile. |
+| **When written** | On every level win and fail, on every fresh level load/restart, on mute toggle, on every Settings change, on achievement unlock, on **Reset Progress**, and whenever the snapshot is saved (§4.2). |
 | **Score update** | `completed` is set to `true`; `bestTimeSeconds` keeps the lower of the old and new time (rounded to 0.1 s); `stars` keeps the higher of the old and new rating. |
-| **Star rating** | 1 = completed; 2 = within `parTime`; 3 = within `parTime` with zero rewinds. Campaign maximum 12. |
+| **Star rating** | 1 = completed; 2 = within `parTime`; 3 = within `parTime` with zero rewinds. Campaign maximum 18 stars across 6 missions. |
 | **Unlock rule** | Clearing level *i* sets `unlockedLevelIndex = max(unlockedLevelIndex, min(i + 1, lastLevelIndex))`. |
 | **Corrupt / blocked data** | Unparseable JSON or an unavailable `localStorage` falls back to a fresh profile (the game still runs); `unlockedLevelIndex` is clamped to the valid level range. If writing fails, progress lasts for the current session only. |
 | **Resume rule** | On page load: (1) a valid `inProgress` snapshot is restored and the game opens `PAUSED` on *WELCOME BACK, NAME!*; (2) otherwise `lastLevelIndex` is opened if it is unlocked; (3) otherwise the first unlocked mission that is not yet completed (or Mission 1 if every unlocked mission is completed). Cases 2–3 show a welcome toast. |

@@ -129,39 +129,57 @@ When touch mode is on (`body.touch-ui`), the page fills the dynamic viewport (`1
 | :--- | :--- | :--- | :--- |
 | **Level Complete** (`WIN`) | `MISSION ACCOMPLISHED!` | Time (with "new best!"), Target ✔/✘, Best, Rewinds, Rating (★☆☆–★★★) | **Next Level ➔** (also `Enter`), Replay Level, Levels |
 | **Fail** (`FAIL`) | e.g. `CAUGHT IN INVALID TERRAIN`, `SPOTTED BY LUMEN GUARD!`, `SPOTTED BY NYX GUARD!` | — | Try Again, Levels |
-| **Campaign Complete** (`CAMPAIGN_COMPLETE`) | `HEIST COMPLETE!` | Level stats + Heist total (best), Campaign stars X / 12 | **Play Again ⟲** (restarts at Mission 1), Replay Level, Levels |
+| **Campaign Complete** (`CAMPAIGN_COMPLETE`) | `HEIST COMPLETE!` | Level stats + Heist total (best), Campaign stars X / 18 | **Play Again ⟲** (restarts at Mission 1), Replay Level, Levels |
+| **Custom Heist Win** (`WIN`, Level -1) | `CUSTOM HEIST CLEARED!` | Time, Target, Rewinds, Rating | **Workshop 🛠️**, Replay Level, Levels |
 | **Paused** (`PAUSED`) | `PAUSED` | *"The heist is on hold. Press Continue, P or Esc to get back in."* | **Continue ➔** (also `P` / `Esc` / `Enter`), Restart Level, Levels |
 | **Welcome Back** (`PAUSED`, resumed snapshot) | `WELCOME BACK, NAME!` | *"Mission N is exactly where you left it (m:ss.s on the clock)…"* | **Continue ➔** (also `P` / `Enter`), Restart Level, Levels |
 
 All overlay cards pop in with a short scale/fade animation.
 
 ### 3.7 Level Select Modal
-1. Mission cards are generated from level data: number, title, description, star rating (☆☆☆–★★★), and best time + target time.
+1. Mission cards are generated from level data: number, title, description, star rating (☆☆☆–★★★), and best time + target time across all 6 missions.
 2. Locked missions are dimmed with `🔒 Locked — clear the previous mission` and cannot be clicked.
-3. The footer shows the campaign star total (`★ X / 12`), a hint on how to earn ★★★, and a **Reset Progress** button (with a confirmation dialog).
+3. The footer shows the campaign star total (`★ X / 18`), a hint on how to earn ★★★, and a **Reset Progress** button (with a confirmation dialog).
 4. The game pauses while the modal is open; `Esc` or the `×` button closes it (`Esc` only toggles pause when the modal is closed).
 
 ### 3.8 Login & Account Flow
 | Screen State | When | What the Player Sees |
 | :--- | :--- | :--- |
-| **First visit** | No accounts in this browser | Opens on **Create Account** (violet tab): Username, Password, Confirm password, *Stay signed in* (ticked), **Create Account & Play ➔** |
-| **Sign In** | Accounts exist, no session | **Sign In** (gold tab): Username, Password, *Stay signed in*, **Enter the Heist ➔**, plus the **Players on this device** list |
+| **First visit** | No accounts in this browser | Opens on **Create Account** (violet tab): Username, Password, Confirm password, *Stay signed in*, **Create Account & Play ➔**, plus **⚡ Quick Play as Guest** button |
+| **Sign In** | Accounts exist, no session | **Sign In** (gold tab): Username, Password, *Stay signed in*, **Enter the Heist ➔**, plus **⚡ Quick Play as Guest** and the **Players on this device** list |
+| **Guest Play** | Click "⚡ Quick Play as Guest" | Instant frictionless authorization as `Guest`, generates ephemeral session, and navigates immediately into gameplay without credentials |
 | **Continue as** | A session exists (this tab or remembered) | *"Signed in as NAME"* with **Continue Heist ➔** and **Switch Account** (logs out and shows Sign In) |
-| **Error** | Validation fails, passwords don't match, name taken, wrong username/password, wrong password on remove | Red message under the form, the card shakes, two-tone error buzz; typing clears the message |
+| **Error** | Validation fails, passwords don't match, name taken, wrong username/password | Red message under the form, the card shakes, two-tone error buzz; typing clears the message |
 | **Success** | Sign-in / account creation / Continue | Success arpeggio, the card flashes with a gold/violet glow, then lifts, shrinks and blurs out, the page fades out, then `game.html` fades in |
 
-* **Players on this device:** one chip per account (most recent first) with an initial-letter avatar, the name, `x/4 missions · ★ n`, and `▶ Mission N in progress` when a mid-level snapshot exists. Clicking (or `Enter` / `Space` on) a chip switches to Sign In and prefills the username; **×** asks for that account's password and removes the account and its progress.
-* A footnote states that accounts and progress are saved only in this browser and that a real password should not be reused.
-* Opening `game.html` without a session silently redirects to the login page.
+### 3.14 Story Briefing & Dialogue Modal
+* **Access Point:** Automatically shown on the first infiltration of any mission; accessible anytime via the **📜 Briefing** navbar button or `I` hotkey.
+* **Layout:** Centred glass panel featuring two distinct speaker dialogue bubbles:
+  - **Sol (Lightwalker):** Golden avatar with radiant aura, displaying tactical guidance on light coverage and optical setups.
+  - **Umbra (Shadowweaver):** Deep violet avatar with spectral glow, providing commentary on unlit traversal and stealth infiltration.
+  - **Security Blueprint Intel:** High-contrast tactical alert card summarizing target sectors, laser hazards, and guard vision cones.
+* **Footer Action:** **Begin Infiltration ➔** primary action button cleanly resumes play.
 
-### 3.9 Login Screen Motion & Sound
-* **Background canvas:** a golden spotlight sweeps slowly from the top-left corner; dust motes drift upward and glow **gold inside the beam** and **violet in the dark**; two soul orbs (gold and violet) orbit the centre; violet mist pools in the bottom-right corner.
-* **Card:** rises in on load; the ✨ logo floats; **LIGHT** glows gold and **SHADOW** glows violet; fields slide in; the submit button has a periodic light sheen; the tab indicator slides between tabs (gold for Sign In, violet for Create Account; the checkbox accent follows).
-* **UI sounds (Web Audio, no files):** hover tick, click, soft typing ticks, tab whoosh (rising for Sign In, falling for Create Account), two-tone error buzz, success arpeggio. A 🔊/🔇 toggle (top-right) mutes them and is remembered (`LIGHT_SHADOW_UI_MUTED`).
+### 3.15 Heist Trophies & Achievements Modal
+* **Access Point:** Click the **🏆 Trophies** button on the navbar.
+* **Header Summary:** Real-time counter (`🏆 X / 10 Unlocked`) accompanied by a sleek, neon-cyan progress bar displaying completion percentage.
+* **Trophy Grid:** 10 responsive glass cards featuring custom badge icons, titles, unlocked/locked criteria, and formatted date of unlock.
+* **Celebratory Toast:** Unlocking any achievement during gameplay triggers an animated HUD banner toast (`🏆 TROPHY UNLOCKED: ...!`) and procedural chime audio cue.
+
+### 3.16 Custom Heist Workshop (Level Editor)
+* **Access Point:** Click the **🛠️ Workshop** button on the navbar.
+* **Toolbar Architecture:**
+  - **Entities Palette:** 16 tools including Wall, Spotlight, Omni-Lamp, Mirror, Prism, Pressure Plate, Security Gate, Pushable Crate, Lumen Guard, Nyx Guard, Bonus Diamond, Sol Spawn, Umbra Spawn, Loot, Exit Portal, and Erase.
+  - **Inspector Bar:** Mission Title and Par Time inputs, with Clear, Export JSON Code, Import JSON Code, and Playtest Heist action buttons.
+* **Interactive Canvas:**
+  - Snapped 20 px blueprint grid with dynamic element rendering.
+  - Interactive drag-to-create previews for walls and security gates.
+  - Contextual right-click eraser tool.
+  - Live Playtesting: Immediate transition into gameplay mode with custom mission parameters and achievement award (`heist_architect`).
 
 ### 3.10 Game Header & Session Controls
 * **Player badge** (`👤 NAME`) shows who is signed in.
-* **⏸️ Pause**, **⚙️ Settings** (§3.15), **⛶ Full screen** (touch mode only), **🔊 Sound** (🔇 when muted), **↩️ Rewind** (hidden in touch mode, where UNDO replaces it), **🔄 Restart**, **Levels**, and **Sign Out** (saves the snapshot, signs out, fades back to the login page). Below 1200 px, Levels and Sign Out become 🗺️ / 🚪 icon buttons.
+* **Top Buttons:** 📜 Briefing, 🏆 Achievements, 🛠️ Workshop, 💡 Levels, ⏸️ Pause, ⚙️ Settings, ⛶ Full screen (touch mode), 🔊 Sound, ↩️ Rewind, 🔄 Restart, and 🚪 Sign Out. Below 1200 px, icon badges compact gracefully.
 
 ### 3.11 Pause & Continue Where You Left Off
 1. `P`, `Esc` or ⏸️ pauses: the pause blip plays and the **PAUSED** overlay appears; the same keys or **Continue ➔** resume.

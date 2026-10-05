@@ -191,6 +191,23 @@
       return { ok: true };
     },
 
+    // Instant guest session without requiring full account registration
+    loginAsGuest() {
+      const data = readAccounts();
+      if (!data.users['guest']) {
+        data.users['guest'] = {
+          username: 'Guest',
+          salt: randomSalt(),
+          hash: '',
+          created: Date.now(),
+          lastLogin: Date.now()
+        };
+        writeAccounts(data);
+      }
+      this.startSession('Guest', false);
+      return { ok: true, username: 'Guest' };
+    },
+
     startSession(username, remember) {
       const session = JSON.stringify({ username });
       try { storage('sessionStorage').setItem(SESSION_KEY, session); } catch (e) { /* ignore */ }
